@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 
+import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -20,6 +21,8 @@ import org.apache.commons.net.ftp.FTPFile;
 public class MainUI extends JFrame {
 	private String hostname, username; // hien thi host, user va port tren giao dien
 	private int port;
+	private JButton btnLogOut;
+	
 	private FTPClient ftpClient;
 	// private UploadThread upload;
 	private LocalDirPanel localDirPanel;
@@ -59,16 +62,37 @@ createActions();
 	}
 
 	private JPanel createInfoPanel() {
-		JPanel p = new JPanel(new FlowLayout(10, 10, 10));
+		JPanel p = new JPanel(new FlowLayout(10, 10, 30));
 		p.setBorder(new EmptyBorder(5, 5, 5, 5));
 		p.add(new JLabel("Host:  " + this.hostname));
 		p.add(new JLabel("Username:  " + this.username));
 		p.add(new JLabel("Port: " + this.port));
+		
+		btnLogOut = new  JButton("Log out");
+		p.add(btnLogOut);
 		return p;
 
 	}
 
 	private void createActions() {
+		btnLogOut.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				// TODO Auto-generated method stub
+				if (JOptionPane.showConfirmDialog(null, "Are you sure want to log out?", "WARNING",
+						JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+					client.sendCloseRequest();
+					MainUI.this.dispose();
+					LoginBox loginBox = new LoginBox();
+
+				} else {
+					return;
+				}
+				
+			}
+		});
+		
 		localDirPanel.getBtnUpload().addActionListener(new ActionListener() {
 
 			@Override
