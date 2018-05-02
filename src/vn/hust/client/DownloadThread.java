@@ -4,11 +4,16 @@ import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 
+import javax.sound.midi.Soundbank;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
@@ -17,8 +22,8 @@ import javax.swing.JProgressBar;
 import javax.swing.Timer;
 import javax.swing.border.EmptyBorder;
 
-public class UploadThread implements Runnable, ActionListener {
-	public static final int UPLOAD = 4,CANCEL_UPLOAD = 5,CONTINUE_UPLOAD=6;
+public class DownloadThread implements Runnable, ActionListener {
+	public static final int DOWNLOAD = 10, CANCEL_DOWNLOAD = 11, CONTINUE_DOWNLOAD = 12;
 	private Client client;
 
 	// đường dẫn nguồn
@@ -45,21 +50,20 @@ public class UploadThread implements Runnable, ActionListener {
 	// button pause, resume, cancel
 	private JFrame frame;
 	private JButton btnPause, btnResume, btnCancel;
+	private LocalDirPanel localDirPanel;
 
-	private RemoteDirPanel remoteDirPanel;
-
-	public UploadThread(Client client, String localPath, String remotePath, RemoteDirPanel remoteDirPanel) {
+	public DownloadThread(Client client, String localPath, String remotePath, LocalDirPanel localDirPanel) {
 		this.client = client;
 		this.localPath = localPath;
 		this.remotePath = remotePath;
-		this.remoteDirPanel = remoteDirPanel;
-
-		File file = new File(localPath);
-		String fileName = file.getName();
+		this.localDirPanel = localDirPanel;
+		
+		File file = client.getFile(remotePath);
+		String fileName = client.getName(file.getAbsolutePath());
 
 		frame = new JFrame();
 		frame.setLayout(new BorderLayout());
-		frame.setTitle("Uploading " + fileName + " 0%");
+		frame.setTitle("Downloading " + fileName + " 0%");
 		frame.setSize(400, 150);
 		frame.setResizable(true);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -101,50 +105,23 @@ public class UploadThread implements Runnable, ActionListener {
 	@Override
 	public void run() {
 		try {
-			client.out.writeInt(UPLOAD);
+			client.out.writeInt(DOWNLOAD);
 			client.out.flush();
+			System.out.println("-------DOWNLOADING---------");
 
 			client.out.writeUTF(remotePath);
-
-			client.out.writeInt(numberFile);
 			client.out.flush();
-
-			File localFile = new File(this.localPath);
-			len = localFile.length();
 			
-			sizeFile = len / numberFile;
+			int numberFile = client.in.readInt();
+			len = client.in.readLong();
 
-			InputStream is = new FileInputStream(localFile);
-
-			System.out.println("Starting upload file");
-
-			int read = -1;
-			// biến count để đếm lưu lượng file đã upload
-			count = 0;
-
-			// kich thuoc tung part
-			long size, limit;
-			int num;
-			byte[] bytes = new byte[4096];
-
+			int curNumber = 0; // lưu file thứ i đang được download
 			for (int i = 1; i <= numberFile; i++) {
-				System.out.println("Sending part " + i);
-				if (i < numberFile) {
-					size = sizeFile;
-					limit = size * i;
 
-				} else {
-					size = len - (sizeFile * 3);
-					limit = len;
-				}
+				System.out.println("recieving part " + i);
+				OutputStream os2 = new BufferedOutputStream(new FileOutputStream(localPath + "-part" + i));
 
-				if ((int) (size % 4096) == 0) {
-					num = (int) (size / 4096);
-				} else {
-					num = (int) (size / 4096) + 1;
-				}
-				client.out.writeInt(num);
-				client.out.flush();
+				int num = client.in.readInt();
 
 				for (int j = 0; j < num; j++) {
 					if (paused) {
@@ -153,48 +130,78 @@ public class UploadThread implements Runnable, ActionListener {
 
 					if (cancel) {
 						System.out.println("Cancel upload file to server");
-						//trước khi hủy upload cần gửi lệnh đến server
-						//đồng thời xóa các file đã được upload
-						client.out.writeInt(CANCEL_UPLOAD);
+						// trước khi hủy upload cần gửi lệnh đến server
+						// đồng thời xóa các file đã được upload
+						client.out.writeInt(CANCEL_DOWNLOAD);
 						client.out.flush();
 						frame.dispose();
-						//break two loop
-						i=numberFile+1;
+						// break two loop
+						curNumber = i;
+						i = numberFile + 1;
 						j = num;
 						
 						break;
-					}
-					else {
-						client.out.writeInt(CONTINUE_UPLOAD);
+					} else {
+						client.out.writeInt(CONTINUE_DOWNLOAD);
 						client.out.flush();
 					}
+					count = client.in.readLong();
 
-					if ((limit - count) < 4096)
-						bytes = new byte[(int) (limit - count)];
-					else
-						bytes = new byte[4096];
+					int read = client.in.readInt();
 
-					read = is.read(bytes);
+					byte[] bytes = new byte[read];
+					client.in.readFully(bytes, 0, read);
+					os2.write(bytes, 0, read);
 
-					count += read;
-					// send size of arr
-					client.out.writeInt(read);
-					client.out.flush();
-
-					// send arr
-					client.out.write(bytes);
-					client.out.flush();
 				}
-
+				os2.close();
 			}
-			is.close();
+			if(cancel) {
+				for(int i = 1;i<=curNumber;i++) {
+					File file = new File(localPath + "-part" + i);
+					file.delete();
+				}
+			}
+			else
+				joinFile(localPath, numberFile);
 			
 			if(client.in.readUTF().equals("complete")) {
-				this.remoteDirPanel.listDirectory(this.remoteDirPanel.getCurPath());
+				localDirPanel.listDirectory(localDirPanel.getCurPath());
 			}
-		} catch (IOException e1) {
+				
+		} catch (IOException e) {
 			// TODO Auto-generated catch block
-			e1.printStackTrace();
+			e.printStackTrace();
+		}
+
+	}
+
+	private void joinFile(String pathname, int numberFile) {
+		try {
+			OutputStream outputStream = new FileOutputStream(new File(pathname));
+			InputStream inputStream;
+
+			for (int i = 1; i <= numberFile; i++) {
+				File file = new File(pathname + "-part" + i);
+				inputStream = new FileInputStream(file);
+
+				byte[] bytes = new byte[4096];
+				int read = -1;
+				while ((read = inputStream.read(bytes)) != -1) {
+					outputStream.write(bytes, 0, read);
+				}
+				inputStream.close();
+				file.delete();
+			}
+			outputStream.close();
+			System.out.println("Joined File");
+
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 
 	}
@@ -245,6 +252,7 @@ public class UploadThread implements Runnable, ActionListener {
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
+		// TODO Auto-generated method stub
 		if (e.getSource() == btnPause) {
 			pause();
 			btnPause.setEnabled(false);
@@ -271,5 +279,4 @@ public class UploadThread implements Runnable, ActionListener {
 		}
 
 	}
-
 }

@@ -12,7 +12,7 @@ import java.net.UnknownHostException;
 import javax.swing.JOptionPane;
 
 public class Client {
-	public static final int LOGIN = 1, GET_FILE = 2, GET_LIST_FILES = 3, CLOSE = 7, REGISTER = 8,CHECK_DIRECTORY = 9;
+	public static final int LOGIN = 1, GET_FILE = 2, GET_LIST_FILES = 3, CLOSE = 7, REGISTER = 8,CHECK_DIRECTORY = 9,CHECK_FILE=13, GET_NAME = 14;
 	public DataInputStream in;
 	public DataOutputStream out;
 	public ObjectInputStream ois;
@@ -29,9 +29,10 @@ public class Client {
 			oos = new ObjectOutputStream(socket.getOutputStream());
 		} catch (UnknownHostException e) {
 			// TODO Auto-generated catch block
-			JOptionPane.showMessageDialog(null, "Cannot connect to server");
+			JOptionPane.showMessageDialog(null, "Error 404");
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
+			JOptionPane.showMessageDialog(null, "Cannot connect to server");
 			e.printStackTrace();
 		}
 
@@ -89,6 +90,23 @@ public class Client {
 			}
 			return false;
 		}
+		public boolean checkFile(String path) {
+			try {
+				out.writeInt(CHECK_FILE);
+				out.flush();
+				
+				out.writeUTF(path);
+				out.flush();
+				boolean rs = in.readBoolean();
+
+				return rs;
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			return false;
+		}
+		
 	public File getFile(String curPath) {
 		try {
 			out.writeInt(GET_FILE);
@@ -111,7 +129,25 @@ public class Client {
 		return null;
 
 	}
+	public String getName(String curPath) {
+		try {
+			out.writeInt(GET_NAME);
+			out.flush();
 
+			out.writeUTF(curPath);
+			out.flush();
+
+		String name = in.readUTF();
+
+			return name;
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		return null;
+
+	}
 	public File[] listFiles(String curPath) {
 		try {
 			out.writeInt(GET_LIST_FILES);

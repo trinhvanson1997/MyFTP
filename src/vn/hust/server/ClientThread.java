@@ -16,7 +16,8 @@ import java.net.Socket;
 
 public class ClientThread extends Thread {
 	public static final int LOGIN = 1, GET_FILE = 2, GET_LIST_FILES = 3, UPLOAD = 4, CANCEL_UPLOAD = 5,
-			CONTINUE_UPLOAD = 6, CLOSE = 7, REGISTER = 8, CHECK_DIRECTORY = 9;
+			CONTINUE_UPLOAD = 6, CLOSE = 7, REGISTER = 8, CHECK_DIRECTORY = 9, DOWNLOAD = 10, CANCEL_DOWNLOAD = 11,
+			CONTINUE_DOWNLOAD = 12, CHECK_FILE = 13, GET_NAME = 14;
 	public String username;
 	public String homeDir = "C:\\Users\\sontrinh\\Desktop\\FTP\\";
 	// public String homeServer = "C:\\Users\\sontrinh\\Desktop\\FTP\\";
@@ -82,6 +83,19 @@ public class ClientThread extends Thread {
 						out.writeBoolean(false);
 						out.flush();
 					}
+				} else if (request == CHECK_FILE) {
+
+					String path = in.readUTF();
+
+					File file = new File(path);
+
+					if (file.isFile()) {
+						out.writeBoolean(true);
+						out.flush();
+					} else {
+						out.writeBoolean(false);
+						out.flush();
+					}
 				} else if (request == GET_FILE) {
 					String path = in.readUTF();
 
@@ -92,6 +106,16 @@ public class ClientThread extends Thread {
 
 					oos.writeObject(file);
 					oos.flush();
+				} else if (request == GET_NAME) {
+					String path = in.readUTF();
+
+					path = path.replace('/', '\\');
+					path = homeDir + path;
+
+					File file = new File(path);
+
+					out.writeUTF(file.getName());
+					out.flush();
 				} else if (request == GET_LIST_FILES) {
 
 					String path = in.readUTF();
@@ -110,6 +134,7 @@ public class ClientThread extends Thread {
 					}
 
 				} else if (request == UPLOAD) {
+					System.out.println("-------UPLOADING---------");
 					String remotePath = in.readUTF();
 					remotePath = this.homeDir.replace('\\', '/') + remotePath;
 
@@ -144,6 +169,7 @@ public class ClientThread extends Thread {
 
 						}
 						os2.close();
+
 					}
 					if (resume == CONTINUE_UPLOAD) {
 						joinFile(remotePath, numberFile);
@@ -153,6 +179,84 @@ public class ClientThread extends Thread {
 							file.delete();
 						}
 					}
+
+					out.writeUTF("complete");
+					out.flush();
+				} else if (request == DOWNLOAD) {
+					System.out.println("-------DOWNLOADING---------");
+					String remote = in.readUTF();
+					String path = this.homeDir.replace('\\', '/') + remote;
+
+					int numberFile = 4;
+					out.writeInt(numberFile);
+					out.flush();
+
+					File remoteFile = new File(path);
+					long len = remoteFile.length();
+					out.writeLong(len);
+					out.flush();
+
+					long sizeFile = len / numberFile;
+
+					InputStream is = new FileInputStream(remoteFile);
+					System.out.println("Starting download");
+					int resume = CONTINUE_DOWNLOAD;
+					int read = -1;
+					long count = 0, size, limit;
+					int num;
+					byte[] bytes = new byte[4096];
+
+					for (int i = 1; i <= numberFile; i++) {
+						System.out.println("Sending part " + i);
+						if (i < numberFile) {
+							size = sizeFile;
+							limit = size * i;
+						} else {
+							size = len - (sizeFile * 3);
+							limit = len;
+						}
+
+						if ((int) (size % 4096) == 0) {
+							num = (int) (size / 4096);
+						} else {
+							num = (int) (size / 4096) + 1;
+						}
+						out.writeInt(num);
+						out.flush();
+
+						for (int j = 0; j < num; j++) {
+							resume = in.readInt();
+							if (resume == CONTINUE_DOWNLOAD) {
+
+								if ((limit - count) < 4096)
+									bytes = new byte[(int) (limit - count)];
+								else
+									bytes = new byte[4096];
+
+								read = is.read(bytes);
+
+								count += read;
+								out.writeLong(count);
+								out.flush();
+
+								// send size of arr
+								out.writeInt(read);
+								out.flush();
+
+								// send arr
+								out.write(bytes);
+								out.flush();
+							} else if (resume == CANCEL_DOWNLOAD) {
+								i = numberFile + 1;
+								j = num;
+								break;
+							}
+						}
+					}
+					is.close();
+					out.writeUTF("complete");
+					out.flush();
+					
 				} else if (request == CLOSE) {
 					System.out.println("Recieve close request from client");
 					System.out.println("Closing this thread......");
