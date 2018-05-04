@@ -13,6 +13,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.util.List;
 
 public class ClientThread extends Thread {
 	public static final int LOGIN = 1, GET_FILE = 2, GET_LIST_FILES = 3, UPLOAD = 4, CANCEL_UPLOAD = 5,
@@ -20,7 +21,7 @@ public class ClientThread extends Thread {
 			CONTINUE_DOWNLOAD = 12, CHECK_FILE = 13, GET_NAME = 14;
 	public String username;
 	public String homeDir = "C:\\Users\\sontrinh\\Desktop\\FTP\\";
-	// public String homeServer = "C:\\Users\\sontrinh\\Desktop\\FTP\\";
+
 	public String curPath;
 
 	public Socket socket;
@@ -29,8 +30,13 @@ public class ClientThread extends Thread {
 	public ObjectOutputStream oos;
 	public ObjectInputStream ois;
 
-	public ClientThread(Socket socket) {
+	public DBConnect db;
+	public List<String> listUsername;
+
+	public ClientThread(Socket socket, DBConnect db, List<String> listUsername) {
 		this.socket = socket;
+		this.db = db;
+		this.listUsername = listUsername;
 
 		try {
 			in = new DataInputStream(this.socket.getInputStream());
@@ -53,23 +59,38 @@ public class ClientThread extends Thread {
 				if (request == LOGIN) {
 					String username = in.readUTF();
 					String password = in.readUTF();
-					if ((username.equals("son") && password.equals("son"))
-							|| username.equals("hien") && password.equals("hien")
-							|| username.equals("duy") && password.equals("duy")
-							|| username.equals("phuc") && password.equals("phuc")) {
-						this.username = username;
-						this.homeDir += this.username;
-
-						out.writeBoolean(true);
-					} else
-						out.writeBoolean(false);
+					if(listUsername.contains(username)) {
+						out.writeUTF("online");
+					}
+					else {
+						if (db.login(username, password)) {
+							this.username = username;
+							//Lưu đường dẫn đến thư mục trên server ứng với tài khoản đăng nhập
+							this.homeDir += this.username;
+							
+							//Lưu tài khoản vào danh sách đang online
+							this.listUsername.add(username);
+							
+							out.writeUTF("correct");
+						} else
+							out.writeUTF("incorrect");
+					}
+					out.flush();
 				} else if (request == REGISTER) {
 					String username = in.readUTF();
 					String password = in.readUTF();
 
-					String path = this.homeDir + username;
-					File file = new File(path);
-					file.mkdirs();
+					if (db.register(username, password)) {
+						String path = this.homeDir + username;
+						File file = new File(path);
+						file.mkdirs();
+
+						out.writeBoolean(true);
+
+					} else
+						out.writeBoolean(false);
+					out.flush();
+
 				} else if (request == CHECK_DIRECTORY) {
 
 					String path = in.readUTF();
@@ -256,10 +277,11 @@ public class ClientThread extends Thread {
 					is.close();
 					out.writeUTF("complete");
 					out.flush();
-					
+
 				} else if (request == CLOSE) {
 					System.out.println("Recieve close request from client");
 					System.out.println("Closing this thread......");
+					this.listUsername.remove(this.username);
 					socket.close();
 					openThread = false;
 				}
@@ -290,7 +312,7 @@ public class ClientThread extends Thread {
 				file.delete();
 			}
 			outputStream.close();
-			System.out.println("Joined File");
+			System.out.println("Merged Files");
 
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block

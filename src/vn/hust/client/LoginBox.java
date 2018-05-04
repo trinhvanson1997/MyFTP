@@ -6,7 +6,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.net.Socket;
-import java.net.SocketException;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -16,13 +15,10 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 
-import org.apache.commons.net.ftp.FTPClient;
-
 public class LoginBox extends JFrame {
-	
-	private FTPClient ftpClient;
+
 	private JTextField tfHostname, tfUsername, tfPassword, tfPort;
-	private JButton btnConnect,btnRegister;
+	private JButton btnConnect, btnRegister;
 
 	private String hostname, username, password;
 	private int port;
@@ -46,9 +42,7 @@ public class LoginBox extends JFrame {
 	}
 
 	private void createActions() {
-	
-		
-		
+
 		btnConnect.addActionListener(new ActionListener() {
 
 			@Override
@@ -62,16 +56,12 @@ public class LoginBox extends JFrame {
 						|| tfUsername.getText().equals(null) || tfUsername.getText().equals("")) {
 					JOptionPane.showMessageDialog(null, "Please fill out hostname and username!");
 				} else {
-					boolean success;
+					String success;
 					try {
-					
-
-						
 
 						success = client.login(username, password);
-						if (success) {
-							// ftpClient.enterLocalPassiveMode();
-							// ftpClient.setFileType(ftpClient.BINARY_FILE_TYPE);
+						if (success.equals("correct")) {
+						
 
 							System.out.println("Connected and Logged in to server !");
 							JOptionPane.showMessageDialog(null, "Logged in successfully");
@@ -81,13 +71,17 @@ public class LoginBox extends JFrame {
 							mainUI.addWindowListener(new java.awt.event.WindowAdapter() {
 								@Override
 								public void windowClosing(java.awt.event.WindowEvent windowEvent) {
-								client.sendCloseRequest();
+									client.sendCloseRequest();
 									mainUI.dispose();
 								}
 							});
 
-						} else {
-							JOptionPane.showMessageDialog(null, "Failed to log in");
+						}
+						else if(success.equals("online")) {
+							JOptionPane.showMessageDialog(null, "This account is being used on other device! Please try again later!");
+						}
+						else {
+							JOptionPane.showMessageDialog(null, "Username or password is incorrect. Please try again!");
 						}
 
 					} catch (NumberFormatException e) {
@@ -97,30 +91,40 @@ public class LoginBox extends JFrame {
 				}
 			}
 		});
-		
+
 		btnRegister.addActionListener(new ActionListener() {
-			
+
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				hostname = tfHostname.getText();
 				username = tfUsername.getText();
 				password = tfPassword.getText();
 				port = Integer.parseInt(tfPort.getText());
-				Client client = new Client(hostname, port);
-				// TODO Auto-generated method stub
-				if(client.register(username, password)) {
-					JOptionPane.showMessageDialog(null, "Registered successfully");
+
+				if (tfHostname.getText().equals(null) || tfHostname.getText().equals("")
+						|| tfUsername.getText().equals(null) || tfUsername.getText().equals("")
+						|| tfUsername.getText().equals(null) || tfUsername.getText().equals("")
+						|| tfPort.getText().equals(null) || tfPort.getText().equals("")) {
+
+					JOptionPane.showMessageDialog(null, "Please fill out all fields!");
+				} else {
 					
-				}
-				else {
-					JOptionPane.showMessageDialog(null, "Fail to register");
-				}
-				try {
-					client.sendCloseRequest();
-					client.socket.close();
-				} catch (IOException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
+					Client client = new Client(hostname, port);
+				
+					// TODO Auto-generated method stub
+					if (client.register(username, password)) {
+						JOptionPane.showMessageDialog(null, "Registered successfully");
+
+					} else {
+						JOptionPane.showMessageDialog(null, "Username existed! Please try again");
+					}
+					try {
+						client.sendCloseRequest();
+						client.socket.close();
+					} catch (IOException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
 				}
 			}
 		});
@@ -146,12 +150,11 @@ public class LoginBox extends JFrame {
 		 * tfUsername.setText("freev_21943005"); tfPassword = new JTextField();
 		 * tfPassword.setText("hslove");
 		 */
-
-		tfHostname.setText("192.168.1.100");
+		tfHostname.setText("localhost");
+		//tfHostname.setText("192.168.1.100");
 		tfUsername = new JTextField();
-	
+
 		tfPassword = new JTextField();
-	
 
 		tfPort = new JTextField();
 		tfPort.setText("2221");
@@ -170,19 +173,11 @@ public class LoginBox extends JFrame {
 
 		btnConnect = new JButton("Connect to server");
 		btnRegister = new JButton("Register");
-		
+
 		p.add(btnConnect);
 		p.add(btnRegister);
 		return p;
 
-	}
-
-	public FTPClient getFtpClient() {
-		return ftpClient;
-	}
-
-	public void setFtpClient(FTPClient ftpClient) {
-		this.ftpClient = ftpClient;
 	}
 
 	public JTextField getTfHostname() {

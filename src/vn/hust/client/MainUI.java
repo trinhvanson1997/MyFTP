@@ -5,8 +5,6 @@ import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -15,15 +13,12 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
-import org.apache.commons.net.ftp.FTPClient;
-import org.apache.commons.net.ftp.FTPFile;
-
 public class MainUI extends JFrame {
 	private String hostname, username; // hien thi host, user va port tren giao dien
 	private int port;
 	private JButton btnLogOut;
 	
-	private FTPClient ftpClient;
+
 	// private UploadThread upload;
 	private LocalDirPanel localDirPanel;
 	private RemoteDirPanel remoteDirPanel;

@@ -36,13 +36,13 @@ public class DownloadThread implements Runnable, ActionListener {
 	private boolean paused = false;
 	private boolean cancel = false;
 
-	// các biến đo phần trăm file đã đc upload
+	// các biến đo phần trăm file đã đc download
 	private Timer t;
 	private long count = 0;
 	private long len;
 	private int percent;
 
-	// cac bien de upload cac part
+	// cac bien de download cac part
 	private long sizeFile; // kích thước 1 part
 	private int numberFile = 4; // số lượng part
 	private long limit;
@@ -93,7 +93,7 @@ public class DownloadThread implements Runnable, ActionListener {
 					Double temp = ((double) count / len) * 100;
 					percent = temp.intValue();
 					progressBar.setValue(percent);
-					frame.setTitle("Uploading " + fileName + " " + percent + "%");
+					frame.setTitle("Downloading " + fileName + " " + percent + "%");
 				}
 			}
 		});
@@ -129,9 +129,9 @@ public class DownloadThread implements Runnable, ActionListener {
 					}
 
 					if (cancel) {
-						System.out.println("Cancel upload file to server");
-						// trước khi hủy upload cần gửi lệnh đến server
-						// đồng thời xóa các file đã được upload
+						System.out.println("Cancel download file from server");
+						// trước khi hủy download cần gửi lệnh đến server
+						// đồng thời xóa các file đã được download
 						client.out.writeInt(CANCEL_DOWNLOAD);
 						client.out.flush();
 						frame.dispose();

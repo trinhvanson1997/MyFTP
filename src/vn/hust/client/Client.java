@@ -38,7 +38,7 @@ public class Client {
 
 	}
 
-	public boolean login(String username, String password) {
+	public String login(String username, String password) {
 		try {
 			out.writeInt(LOGIN);
 			out.flush();
@@ -46,13 +46,13 @@ public class Client {
 			out.writeUTF(username);
 			out.writeUTF(password);
 
-			boolean rs = in.readBoolean();
+			String rs = in.readUTF();
 			return rs;
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		return false;
+		return "incorrect";
 	}
 
 	public boolean register(String username, String password) {
@@ -65,7 +65,10 @@ public class Client {
 
 			out.writeUTF(password);
 			out.flush();
-
+			
+			boolean rs = in.readBoolean();
+		
+			return rs;
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
