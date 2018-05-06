@@ -2,6 +2,7 @@ package vn.hust.client;
 
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
+import java.awt.Window.Type;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedOutputStream;
@@ -68,7 +69,7 @@ public class DownloadThread implements Runnable, ActionListener {
 		frame.setResizable(true);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setLocationRelativeTo(null);
-
+	
 		JProgressBar progressBar = new JProgressBar(0, 100);
 		progressBar.setValue(0);
 		progressBar.setStringPainted(true);

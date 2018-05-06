@@ -9,17 +9,18 @@ import java.util.List;
 
 public class Server {
 	public List<String> listUsername = new ArrayList<>();
-	
-	public Server(DBConnect db) {
+	public ServerUI serverUI;
+	public Server(DBConnect db,ServerUI serverUI) {
 		try {
 			ServerSocket serverSocket = new ServerSocket(2221);
 		
 			System.out.println("Server is ready!");
+			serverUI.getTextArea().append("Waiting for connection...\n");
 			while(true) {
 				Socket socket = serverSocket.accept();
+				serverUI.getTextArea().append("Established connection to client "+socket.getRemoteSocketAddress() +"\n");
 				
-				
-				ClientThread thread = new ClientThread(socket, db, listUsername);
+				ClientThread thread = new ClientThread(socket, db, listUsername,serverUI);
 				thread.start();
 				
 			}

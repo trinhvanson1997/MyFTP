@@ -34,7 +34,10 @@ public class MainUI extends JFrame {
 
 		localDirPanel = new LocalDirPanel("D:\\");
 		remoteDirPanel = new RemoteDirPanel("/", client);
-
+		
+		new LocalDirPanelController(localDirPanel, remoteDirPanel, client, username);
+		new RemoteDirPanelController(localDirPanel, remoteDirPanel, client, username);
+		
 		setTitle("FTP CLient");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setSize(1000, 600);
@@ -88,79 +91,11 @@ createActions();
 			}
 		});
 		
-		localDirPanel.getBtnUpload().addActionListener(new ActionListener() {
-
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				
-				String local = localDirPanel.getDetails().getText();
-				String remote;
-
-				File dir = new File(local);
-				if (dir.isFile()) {
-					local = local.replace('\\', '/');
-				} else {
-					JOptionPane.showMessageDialog(null, "Choose file to upload");
-					return;
-				}
-				String name = dir.getName(); //tên của file cần upload
-				if(remoteDirPanel.getCurDir().getName().equals(username)) {
-					remote =   "/" + name;
-				}
-				else {
-					remote =  "/"+remoteDirPanel.getCurDir().getName()+ "/" + name;
-				}
-				System.out.println(remote);
-				System.out.println("REMOTE: "+remote);
-				UploadThread upload = new UploadThread(client, local, remote, remoteDirPanel);
-
-				Thread upThread = new Thread(upload);
-				upThread.start();
-
-			}
-		});
-
-		localDirPanel.getBtnAdd().addActionListener(new ActionListener() {
-
-			@Override
-			public void actionPerformed(ActionEvent e) {
-
-			}
-
-		});
-		localDirPanel.getBtnDelete().addActionListener(new ActionListener() {
-
-			@Override
-			public void actionPerformed(ActionEvent e) {
-
-			}
-
-		});
 		
-		remoteDirPanel.getBtnDownload().addActionListener(new ActionListener() {
-			
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				// TODO Auto-generated method stub
-				String remote = remoteDirPanel.getDetails().getText();
-				File dir = client.getFile(remote);
-				String name = client.getName(dir.getAbsolutePath());
-				
-				if(client.checkFile(dir.getAbsolutePath())) {
-					remote = remote;
-				}
-				else {
-					JOptionPane.showMessageDialog(null, "choose file to download");
-				}
-				
-				String local = localDirPanel.getCurDir().getAbsolutePath();
-				local = local.replace('\\', '/');
-				local =local +"/"+name;
-				DownloadThread download = new DownloadThread(client, local, remote,localDirPanel);
-				Thread downloadThread = new Thread(download);
-				downloadThread.start();
-			}
-		});
+
+	
+		
+	
 	}
 
 }
