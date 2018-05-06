@@ -157,7 +157,7 @@ public class LoginBox extends JFrame {
 		tfPassword = new JTextField();
 
 		tfPort = new JTextField();
-		tfPort.setText("2221");
+		tfPort.setText("21");
 
 		p.add(tfHostname);
 		p.add(tfUsername);

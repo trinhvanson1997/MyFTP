@@ -12,7 +12,7 @@ public class Server {
 	public ServerUI serverUI;
 	public Server(DBConnect db,ServerUI serverUI) {
 		try {
-			ServerSocket serverSocket = new ServerSocket(2221);
+			ServerSocket serverSocket = new ServerSocket(21);
 		
 			System.out.println("Server is ready!");
 			serverUI.getTextArea().append("Waiting for connection...\n");
