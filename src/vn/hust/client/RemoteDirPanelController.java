@@ -14,11 +14,11 @@ public class RemoteDirPanelController {
 			public void actionPerformed(ActionEvent e) {
 				// TODO Auto-generated method stub
 				String remote = remoteDirPanel.getDetails().getText();
-				File dir = client.getFile(remote);
-				String name = client.getName(dir.getAbsolutePath());
+				String name = "";
 				
-				if(client.checkFile(dir.getAbsolutePath())) {
+				if(client.checkFile(remote)) {
 					remote = remote;
+					name = remote.substring(remote.lastIndexOf('/')+1);
 				}
 				else {
 					JOptionPane.showMessageDialog(null, "choose file to download");
@@ -28,9 +28,24 @@ public class RemoteDirPanelController {
 				String local = localDirPanel.getCurDir().getAbsolutePath();
 				local = local.replace('\\', '/');
 				local =local +"/"+name;
-				DownloadThread download = new DownloadThread(client, local, remote,localDirPanel);
-				Thread downloadThread = new Thread(download);
-				downloadThread.start();
+				
+				File f = new File(local);
+				if(f.isFile()) {
+					int choice = JOptionPane.showConfirmDialog(null, "This file existed. Do you want to replace?",
+							"Warning", JOptionPane.YES_NO_OPTION);
+					if (choice == JOptionPane.YES_OPTION) {
+						DownloadThread download = new DownloadThread(client, local, remote,localDirPanel);
+						Thread downloadThread = new Thread(download);
+						downloadThread.start();
+					} else
+						return;
+				}
+				else {
+					DownloadThread download = new DownloadThread(client, local, remote,localDirPanel);
+					Thread downloadThread = new Thread(download);
+					downloadThread.start();
+				}
+				
 			}
 		});
 	}

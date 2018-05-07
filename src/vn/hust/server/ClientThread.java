@@ -111,7 +111,8 @@ public class ClientThread extends Thread {
 				} else if (request == CHECK_FILE) {
 
 					String path = in.readUTF();
-
+					System.out.println("CHECK FILE: "+path);
+					path = this.homeDir.replace('\\',	 '/')+path;
 					File file = new File(path);
 
 					if (file.isFile()) {
@@ -163,7 +164,7 @@ public class ClientThread extends Thread {
 				
 					String remotePath = in.readUTF();
 					remotePath = this.homeDir.replace('\\', '/') + remotePath;
-					this.serverUI.getTextArea().append(getDateNow()+" : Recieving file "+remotePath+"\n");
+					this.serverUI.getTextArea().append(getDateNow()+" : Recieving file "+remotePath.replace('/', '\\')+"\n");
 					int numberFile = in.readInt();
 					int resume = CONTINUE_UPLOAD;
 					int curNumber = 0; // lưu file thứ i đang được upload
@@ -215,7 +216,7 @@ public class ClientThread extends Thread {
 				
 					String remote = in.readUTF();
 					String path = this.homeDir.replace('\\', '/') + remote;
-					this.serverUI.getTextArea().append(getDateNow()+" : Sending file "+path+"\n");
+					this.serverUI.getTextArea().append(getDateNow()+" : Sending file "+path.replace('/','\\')+"\n");
 					int numberFile = 4;
 					out.writeInt(numberFile);
 					out.flush();

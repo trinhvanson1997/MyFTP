@@ -35,12 +35,16 @@ public class LocalDirPanelController {
 				} else {
 					remote = "/" + remoteDirPanel.getCurDir().getName() + "/" + name;
 				}
-				System.out.println(remote);
-				System.out.println("REMOTE: " + remote);
-				UploadThread upload = new UploadThread(client, local, remote, remoteDirPanel);
-
-				Thread upThread = new Thread(upload);
-				upThread.start();
+				System.out.println("Check file before upload: "+remote);
+				if (client.checkFile(remote)) {
+					int choice = JOptionPane.showConfirmDialog(null, "This file existed. Do you want to replace?",
+							"Warning", JOptionPane.YES_NO_OPTION);
+					if (choice == JOptionPane.YES_OPTION) {
+						upload(client, local, remote, remoteDirPanel);
+					} else
+						return;
+				} else
+					upload(client, local, remote, remoteDirPanel);
 
 			}
 		});
@@ -69,7 +73,7 @@ public class LocalDirPanelController {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				String path = getCurrentFilePath();
-				if (path==null)
+				if (path == null)
 					return;
 				else {
 
@@ -95,26 +99,26 @@ public class LocalDirPanelController {
 
 				String filePath = getCurrentFilePath();
 				String dirPath = getCurrentDirectoryPath();
-				
+
 				if (filePath.equals(null))
 					return;
 				else {
 
 					File oldFile = new File(filePath);
-					
+
 					String oldName = oldFile.getName().substring(0, oldFile.getName().lastIndexOf('.'));
-					String extend = oldFile.getName().substring(oldFile.getName().lastIndexOf('.') );
-					
+					String extend = oldFile.getName().substring(oldFile.getName().lastIndexOf('.'));
+
 					String newName = JOptionPane.showInputDialog("Enter new name here");
-					if(oldName.equals(newName)) {
+					if (oldName.equals(newName)) {
 						JOptionPane.showMessageDialog(null, "No change");
 						return;
 					}
 					{
-						File newFile = new File(dirPath+"\\"+newName+extend);
+						File newFile = new File(dirPath + "\\" + newName + extend);
 						oldFile.renameTo(newFile);
 						JOptionPane.showMessageDialog(null, "Renamed successfully");
-					localDirPanel.listDirectory(localDirPanel.getCurPath());
+						localDirPanel.listDirectory(localDirPanel.getCurPath());
 					}
 				}
 			}
@@ -136,6 +140,15 @@ public class LocalDirPanelController {
 
 		}
 		return null;
+	}
+
+	private void upload(Client client, String local, String remote, RemoteDirPanel remoteDirPanel) {
+		System.out.println(remote);
+		System.out.println("REMOTE: " + remote);
+		UploadThread upload = new UploadThread(client, local, remote, remoteDirPanel);
+
+		Thread upThread = new Thread(upload);
+		upThread.start();
 	}
 
 }
