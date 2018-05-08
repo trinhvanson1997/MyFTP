@@ -13,6 +13,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import javax.sound.midi.Soundbank;
 import javax.swing.JButton;
@@ -23,8 +25,8 @@ import javax.swing.JProgressBar;
 import javax.swing.Timer;
 import javax.swing.border.EmptyBorder;
 
-public class DownloadThread implements Runnable, ActionListener {
-	public static final int DOWNLOAD = 10, CANCEL_DOWNLOAD = 11, CONTINUE_DOWNLOAD = 12;
+public class DownloadFolderThread implements Runnable, ActionListener {
+	public static final int DOWNLOAD_FOLDER = 19, CANCEL_DOWNLOAD = 11, CONTINUE_DOWNLOAD = 12;
 	private Client client;
 
 	// đường dẫn nguồn
@@ -53,7 +55,7 @@ public class DownloadThread implements Runnable, ActionListener {
 	private JButton btnPause, btnResume, btnCancel;
 	private LocalDirPanel localDirPanel;
 
-	public DownloadThread(Client client, String localPath, String remotePath, LocalDirPanel localDirPanel) {
+	public DownloadFolderThread(Client client, String localPath, String remotePath, LocalDirPanel localDirPanel) {
 		this.client = client;
 		this.localPath = localPath;
 		this.remotePath = remotePath;
@@ -106,19 +108,19 @@ public class DownloadThread implements Runnable, ActionListener {
 	@Override
 	public void run() {
 		try {
-			client.out.writeInt(DOWNLOAD);
+			client.out.writeInt(DOWNLOAD_FOLDER);
 			client.out.flush();
-			System.out.println("-------DOWNLOADING---------");
+			System.out.println("-------DOWNLOADING FOLDER---------");
 
 			client.out.writeUTF(remotePath);
 			client.out.flush();
 			
 			int numberFile = client.in.readInt();
 			len = client.in.readLong();
-
+System.out.println("LOCAL: "+localPath);
 			int curNumber = 0; // lưu file thứ i đang được download
 			for (int i = 1; i <= numberFile; i++) {
-
+				
 				System.out.println("recieving part " + i);
 				OutputStream os2 = new BufferedOutputStream(new FileOutputStream(localPath + "-part" + i));
 
@@ -163,14 +165,18 @@ public class DownloadThread implements Runnable, ActionListener {
 					file.delete();
 				}
 			}
-			else
+			else {
 				joinFile(localPath, numberFile);
-			
+				unZip(localPath, localPath.substring(0,localPath.lastIndexOf('.')));
+			}
 			if(client.in.readUTF().equals("complete")) {
 				localDirPanel.listDirectory(localDirPanel.getCurPath());
-				JOptionPane.showMessageDialog(null, "Downloaded file");
+				File file = new File(localPath);
+				file.delete();
+				JOptionPane.showMessageDialog(null, "Downloaded folder");
 			}
 			
+				
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -280,5 +286,35 @@ public class DownloadThread implements Runnable, ActionListener {
 
 		}
 
+	}
+	
+	public void unZip(String zipFile, String outputFolder) {
+		byte[] buffer = new byte[1024];
+		try {
+			File folder = new File(outputFolder);
+			if (!folder.exists()) {
+				folder.mkdir();
+			}
+			ZipInputStream zis = new ZipInputStream(new FileInputStream(zipFile));
+			ZipEntry ze = zis.getNextEntry();
+			while (ze != null) {
+				String fileName = ze.getName();
+				File newFile = new File(outputFolder + File.separator + fileName);
+				
+				new File(newFile.getParent()).mkdirs();
+				FileOutputStream fos = new FileOutputStream(newFile);
+				int len;
+				while ((len = zis.read(buffer)) > 0) {
+					fos.write(buffer, 0, len);
+				}
+				fos.close();
+				ze = zis.getNextEntry();
+			}
+			zis.closeEntry();
+			zis.close();
+
+		} catch (IOException ex) {
+			ex.printStackTrace();
+		}
 	}
 }

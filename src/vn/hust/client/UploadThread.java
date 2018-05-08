@@ -191,7 +191,7 @@ public class UploadThread implements Runnable, ActionListener {
 			
 			if(client.in.readUTF().equals("complete")) {
 				this.remoteDirPanel.listDirectory(this.remoteDirPanel.getCurPath());
-				
+				JOptionPane.showMessageDialog(null, "Uploaded file");
 			}
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block

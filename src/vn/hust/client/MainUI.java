@@ -18,7 +18,8 @@ public class MainUI extends JFrame {
 	private int port;
 	private JButton btnLogOut;
 	private JLabel lbStatus;
-
+	private JPanel statusPanel;
+	
 	// private UploadThread upload;
 	private LocalDirPanel localDirPanel;
 	private RemoteDirPanel remoteDirPanel;
@@ -47,8 +48,8 @@ public class MainUI extends JFrame {
 		add(createInfoPanel(), BorderLayout.NORTH);
 		add(createCenterPanel(), BorderLayout.CENTER);
 		
-		lbStatus = new JLabel("Status: ");
-		add(lbStatus, BorderLayout.SOUTH);
+		
+		add(createBottomPanel(), BorderLayout.SOUTH);
 		setResizable(false);
 		setVisible(true);
 	
@@ -63,10 +64,10 @@ public class MainUI extends JFrame {
 	}
 
 	private JPanel createBottomPanel() {
-		JPanel p = new JPanel(new BorderLayout(10, 10));
-		
-		p.add(lbStatus, BorderLayout.CENTER);
-		return p;
+		statusPanel = new JPanel(new BorderLayout(10, 10));
+		lbStatus = new JLabel("Status: ");
+		statusPanel.add(lbStatus, BorderLayout.CENTER);
+		return statusPanel;
 	}
 
 	private JPanel createInfoPanel() {
@@ -141,6 +142,14 @@ public class MainUI extends JFrame {
 
 	public void setClient(Client client) {
 		this.client = client;
+	}
+
+	public JPanel getStatusPanel() {
+		return statusPanel;
+	}
+
+	public void setStatusPanel(JPanel statusPanel) {
+		this.statusPanel = statusPanel;
 	}
 	
 	

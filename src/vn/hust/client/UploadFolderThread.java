@@ -113,7 +113,7 @@ public class UploadFolderThread implements Runnable, ActionListener {
 			len = localFile.length();
 
 			sizeFile = len / numberFile;
-
+		
 			InputStream is = new FileInputStream(localFile);
 
 			System.out.println("Starting upload file");
@@ -192,6 +192,7 @@ public class UploadFolderThread implements Runnable, ActionListener {
 				this.remoteDirPanel.listDirectory(this.remoteDirPanel.getCurPath());
 				File file = new File(localPath);
 				file.delete();
+				JOptionPane.showMessageDialog(null, "Uploaded folder");
 			}
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block

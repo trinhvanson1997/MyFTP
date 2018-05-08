@@ -176,19 +176,20 @@ public class RemoteDirPanel extends JPanel implements ActionListener, ItemListen
 		data[0][0] = "..";
 
 		for (int i = 0; i < files.length; i++) {
-			System.out.println(files[i].getName());
+			String path = files[i].getAbsolutePath();
+			
 			data[i + 1][0] = files[i].getName();
-			if (files[i].isDirectory()) {
-
+			if (client.checkDir(path)) {
+				
 				data[i + 1][2] = "";
-			} else if (files[i].isFile()) {
+			} else if (client.checkFileByPath(path)) {
 				data[i + 1][1] = "file";
-				data[i + 1][2] = String.valueOf(files[i].length() / 1024);
+				data[i + 1][2] = String.valueOf(client.getSize(path) / 1024);
 			} else {
 				data[i + 1][1] = "";
 			}
 
-			data[i + 1][3] = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(files[i].lastModified());
+			data[i + 1][3] = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(client.getLastModified(path));
 		}
 
 		DefaultTableModel tableModel = new DefaultTableModel(data, columns) {

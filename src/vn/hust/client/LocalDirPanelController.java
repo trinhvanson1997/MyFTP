@@ -1,5 +1,6 @@
 package vn.hust.client;
 
+import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -12,6 +13,7 @@ import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 
 public class LocalDirPanelController {
@@ -47,21 +49,27 @@ public class LocalDirPanelController {
 
 					fileList.removeAll(fileList);
 
-					mainUI.getLbStatus().setText("Status: Getting list files from folder " + nameFileZip);
-				mainUI.getContentPane().validate();
-				mainUI.getContentPane().repaint();
-					
+					mainUI.getStatusPanel().remove(mainUI.getStatusPanel().getComponent(0));
+					JLabel l = new JLabel("Status: Getting list files");
+					mainUI.getStatusPanel().add(l, BorderLayout.CENTER);
+					mainUI.getStatusPanel().validate();
+					mainUI.getStatusPanel().repaint();
+
 					getFileList(f);
-					mainUI.getLbStatus().setText("Status: Zipping folder before uploading ");
-					mainUI.getContentPane().validate();
-					mainUI.getContentPane().repaint();
-					
+
+					mainUI.getStatusPanel().remove(mainUI.getStatusPanel().getComponent(0));
+					l = new JLabel("Status: Zipping folder before uploading ");
+					mainUI.getStatusPanel().add(l, BorderLayout.CENTER);
+					mainUI.getStatusPanel().validate();
+					mainUI.getStatusPanel().repaint();
+
 					zip();
-					
-					mainUI.getLbStatus().setText("Status: Ready to upload");
-					mainUI.getContentPane().validate();
-					mainUI.getContentPane().repaint();
-					
+					mainUI.getStatusPanel().remove(mainUI.getStatusPanel().getComponent(0));
+					l = new JLabel("Status: Ready to upload");
+					mainUI.getStatusPanel().add(l, BorderLayout.CENTER);
+					mainUI.getStatusPanel().validate();
+					mainUI.getStatusPanel().repaint();
+
 					local = des;
 
 				}
@@ -81,9 +89,9 @@ public class LocalDirPanelController {
 
 				if (dir.isDirectory())
 					remoteFile = client.getFile(remote.substring(0, remote.lastIndexOf('.')));
-			
 
-				if (remoteFile.isDirectory() || remoteFile.isFile()) {
+				if (client.checkDir(remoteFile.getAbsolutePath())
+						|| client.checkFileByPath(remoteFile.getAbsolutePath())) {
 					int choice = JOptionPane.showConfirmDialog(null, "This file existed. Do you want to replace?",
 							"Warning", JOptionPane.YES_NO_OPTION);
 					if (choice == JOptionPane.YES_OPTION) {
@@ -198,8 +206,7 @@ public class LocalDirPanelController {
 	}
 
 	private void upload(Client client, String local, String remote, RemoteDirPanel remoteDirPanel) {
-		System.out.println(remote);
-		System.out.println("REMOTE: " + remote);
+	
 		UploadThread upload = new UploadThread(client, local, remote, remoteDirPanel);
 
 		Thread upThread = new Thread(upload);
@@ -207,8 +214,7 @@ public class LocalDirPanelController {
 	}
 
 	private void uploadFolder(Client client, String local, String remote, RemoteDirPanel remoteDirPanel) {
-		System.out.println(remote);
-		System.out.println("REMOTE: " + remote);
+	
 		UploadFolderThread upload = new UploadFolderThread(client, local, remote, remoteDirPanel);
 
 		Thread upThread = new Thread(upload);

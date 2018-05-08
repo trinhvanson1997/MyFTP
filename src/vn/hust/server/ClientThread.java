@@ -14,15 +14,18 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
 public class ClientThread extends Thread {
 	public static final int LOGIN = 1, GET_FILE = 2, GET_LIST_FILES = 3, UPLOAD = 4, CANCEL_UPLOAD = 5,
 			CONTINUE_UPLOAD = 6, CLOSE = 7, REGISTER = 8, CHECK_DIRECTORY = 9, DOWNLOAD = 10, CANCEL_DOWNLOAD = 11,
-			CONTINUE_DOWNLOAD = 12, CHECK_FILE = 13, GET_NAME = 14, UPLOAD_FOLDER = 15;
+			CONTINUE_DOWNLOAD = 12, CHECK_FILE = 13, GET_NAME = 14, UPLOAD_FOLDER = 15, GET_SIZE =16,
+			GET_LASTMODIFIED = 17,CHECK_FILE_BY_PATH=18,DOWNLOAD_FOLDER=19;
 	public String username;
 	public String homeDir = "C:\\Users\\sontrinh\\Desktop\\FTP\\";
 
@@ -38,12 +41,19 @@ public class ClientThread extends Thread {
 	public List<String> listUsername;
 	public ServerUI serverUI;
 
+	
+	public String srcZip;
+	public String nameFileZip;
+	String des = "";
+	public List<String> fileList = new ArrayList<>();
+	
 	public ClientThread(Socket socket, DBConnect db, List<String> listUsername, ServerUI serverUI) {
 		this.socket = socket;
 		this.db = db;
 		this.listUsername = listUsername;
 		this.serverUI = serverUI;
 
+		
 		try {
 			in = new DataInputStream(this.socket.getInputStream());
 			out = new DataOutputStream(this.socket.getOutputStream());
@@ -125,12 +135,27 @@ public class ClientThread extends Thread {
 						out.writeBoolean(false);
 						out.flush();
 					}
-				} else if (request == GET_FILE) {
+				
+			} else if (request == CHECK_FILE_BY_PATH) {
+
+				String path = in.readUTF();
+			
+			
+				File file = new File(path);
+
+				if (file.isFile()) {
+					out.writeBoolean(true);
+					out.flush();
+				} else {
+					out.writeBoolean(false);
+					out.flush();
+				}
+			}else if (request == GET_FILE) {
 					String path = in.readUTF();
 
 					path = path.replace('/', '\\');
 					path = homeDir + path;
-					
+				
 					System.out.println("GET FILE: "+ path);
 					File file = new File(path);
 
@@ -146,7 +171,22 @@ public class ClientThread extends Thread {
 
 					out.writeUTF(file.getName());
 					out.flush();
-				} else if (request == GET_LIST_FILES) {
+				}
+				else if(request == GET_SIZE) {
+					String path = in.readUTF();
+					File file = new File(path);
+					
+					out.writeLong(file.length());
+					out.flush();
+				}
+				else if(request == GET_LASTMODIFIED) {
+					String path = in.readUTF();
+					File file = new File(path);
+					
+					out.writeLong(file.lastModified());
+					out.flush();
+				}
+				else if (request == GET_LIST_FILES) {
 
 					String path = in.readUTF();
 					path = path.replace("/", "\\");
@@ -158,8 +198,9 @@ public class ClientThread extends Thread {
 					out.writeInt(files.length);
 					out.flush();
 
-					for (File file2 : files) {
-						oos.writeObject(file2);
+					for(int i=0;i<files.length;i++)
+					{
+						oos.writeObject(files[i]);
 						oos.flush();
 					}
 
@@ -353,7 +394,103 @@ public class ClientThread extends Thread {
 					out.writeUTF("complete");
 					out.flush();
 
-				} else if (request == CLOSE) {
+				}
+				 else if (request == DOWNLOAD_FOLDER) {
+						System.out.println("-------DOWNLOADING---------");
+
+						String remote = in.readUTF();
+						String path = this.homeDir.replace('\\', '/') + remote;
+						
+						srcZip = path;
+
+						File f = new File(srcZip);
+						des = f.getAbsolutePath() + ".zip";
+						nameFileZip = f.getName();
+						
+						fileList.removeAll(fileList);
+						
+						getFileList(f);
+						
+						zip();
+						path = des;
+						this.serverUI.getTextArea()
+								.append(getDateNow() + " : Sending file " + path.replace('/', '\\') + "\n");
+						int numberFile1 = 4;
+						out.writeInt(numberFile1);
+						out.flush();
+
+						File remoteFile = new File(path);
+						long len = remoteFile.length();
+						out.writeLong(len);
+						out.flush();
+
+						long sizeFile = len / numberFile1;
+
+						InputStream is = new FileInputStream(remoteFile);
+						System.out.println("Starting download");
+						int resume1 = CONTINUE_DOWNLOAD;
+						int read = -1;
+						long count = 0, size, limit;
+						int num;
+						byte[] bytes = new byte[4096];
+
+						for (int i = 1; i <= numberFile1; i++) {
+							System.out.println("Sending part " + i);
+							if (i < numberFile1) {
+								size = sizeFile;
+								limit = size * i;
+							} else {
+								size = len - (sizeFile * 3);
+								limit = len;
+							}
+
+							if ((int) (size % 4096) == 0) {
+								num = (int) (size / 4096);
+							} else {
+								num = (int) (size / 4096) + 1;
+							}
+							out.writeInt(num);
+							out.flush();
+
+							for (int j = 0; j < num; j++) {
+								resume1 = in.readInt();
+								if (resume1 == CONTINUE_DOWNLOAD) {
+
+									if ((limit - count) < 4096)
+										bytes = new byte[(int) (limit - count)];
+									else
+										bytes = new byte[4096];
+
+									read = is.read(bytes);
+
+									count += read;
+									out.writeLong(count);
+									out.flush();
+
+									// send size of arr
+									out.writeInt(read);
+									out.flush();
+
+									// send arr
+									out.write(bytes);
+									out.flush();
+								} else if (resume1 == CANCEL_DOWNLOAD) {
+									this.serverUI.getTextArea().append(getDateNow() + " : Cancel downloading file ");
+									i = numberFile1 + 1;
+									j = num;
+									break;
+								}
+							}
+						}
+						is.close();
+						File file = new File(des);
+						file.delete();
+						
+						out.writeUTF("complete");
+						out.flush();
+
+					}
+				else if (request == CLOSE) {
 					System.out.println("Recieve close request from client");
 					System.out.println("Closing this thread......");
 					this.listUsername.remove(this.username);
@@ -435,6 +572,53 @@ public class ClientThread extends Thread {
 		String pattern = "HH:mm:ss";
 		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(pattern);
 		return simpleDateFormat.format(new Date());
+
+	}
+	
+	public void getFileList(File file) {
+		if (file.isFile())
+			fileList.add(generateZipEntry(file.getAbsolutePath().toString()));
+		if (file.isDirectory()) {
+			for (String subFile : file.list()) {
+				getFileList(new File(file, subFile));
+			}
+		}
+	}
+	
+	private String generateZipEntry(String file) {
+		return file.substring(srcZip.length() + 1, file.length());
+	}
+	
+	public void zip() {
+		byte[] bytes = new byte[1024];
+		try {
+			FileOutputStream fos = new FileOutputStream(des);
+			ZipOutputStream zos = new ZipOutputStream(fos);
+
+			for (String file : fileList) {
+				System.out.println("File added: " + file);
+				ZipEntry ze = new ZipEntry(file);
+				zos.putNextEntry(ze);
+
+				FileInputStream fin = new FileInputStream(srcZip + File.separator + file);
+
+				int read;
+
+				while ((read = fin.read(bytes)) != -1) {
+					zos.write(bytes, 0, read);
+				}
+				fin.close();
+			}
+			zos.closeEntry();
+			zos.close();
+
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
 	}
 

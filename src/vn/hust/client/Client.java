@@ -12,7 +12,8 @@ import java.net.UnknownHostException;
 import javax.swing.JOptionPane;
 
 public class Client {
-	public static final int LOGIN = 1, GET_FILE = 2, GET_LIST_FILES = 3, CLOSE = 7, REGISTER = 8,CHECK_DIRECTORY = 9,CHECK_FILE=13, GET_NAME = 14;
+	public static final int LOGIN = 1, GET_FILE = 2, GET_LIST_FILES = 3, CLOSE = 7, REGISTER = 8,CHECK_DIRECTORY = 9,
+			CHECK_FILE=13, GET_NAME = 14,GET_SIZE =16, GET_LASTMODIFIED = 17,CHECK_FILE_BY_PATH=18;
 	public DataInputStream in;
 	public DataOutputStream out;
 	public ObjectInputStream ois;
@@ -110,6 +111,23 @@ public class Client {
 			return false;
 		}
 		
+		public boolean checkFileByPath(String path) {
+			try {
+				out.writeInt(CHECK_FILE_BY_PATH);
+				out.flush();
+				
+				out.writeUTF(path);
+				out.flush();
+				boolean rs = in.readBoolean();
+
+				return rs;
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			return false;
+		}
+		
 	public File getFile(String curPath) {
 		try {
 			out.writeInt(GET_FILE);
@@ -151,6 +169,46 @@ public class Client {
 		return null;
 
 	}
+	
+	public long getSize(String path) {
+		try {
+			out.writeInt(GET_SIZE);
+			out.flush();
+
+			out.writeUTF(path);
+			out.flush();
+
+	long size = in.readLong();
+
+			return size;
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		return 0;
+	}
+	
+	
+	public long getLastModified(String path) {
+		try {
+			out.writeInt(GET_LASTMODIFIED);
+			out.flush();
+
+			out.writeUTF(path);
+			out.flush();
+
+	long last = in.readLong();
+
+			return last;
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		return 0;
+	}
+	
 	public File[] listFiles(String curPath) {
 		try {
 			out.writeInt(GET_LIST_FILES);
