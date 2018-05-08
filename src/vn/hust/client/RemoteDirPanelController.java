@@ -17,12 +17,11 @@ public class RemoteDirPanelController {
 				String name = "";
 				
 				if(client.checkFile(remote)) {
-					remote = remote;
+				
 					name = remote.substring(remote.lastIndexOf('/')+1);
 				}
-				else {
-					JOptionPane.showMessageDialog(null, "choose file to download");
-					return;
+				if(client.checkDir(remote)) {
+					
 				}
 				
 				String local = localDirPanel.getCurDir().getAbsolutePath();

@@ -26,14 +26,24 @@ import javax.swing.table.DefaultTableModel;
 public class LocalDirPanel extends JPanel implements ActionListener {
 	private JButton btnUpload, btnAdd, btnRename, btnDelete;
 
+	// hiển thị đường dẫn đến file hiện tại
 	private JTextField details;
+	
+	//thư mục hiện tại
 	private File curDir;
+	
+	//lưu danh sách các file trong thư mục htai
 	private File[] files;
+	
+	//đường dẫn đến thư mục htai
 	public String curPath;
+	
+	//hiển thị bảng danh sách file, thư mục
 	private JTable table;
 	private JScrollPane scroll;
 	private String[] columns = { "Name", "Type", "Size (kilobytes)", "Last Modified" };
 
+	
 	public LocalDirPanel(String path) {
 		this.curPath = path;
 		setPreferredSize(new Dimension(450, 400));

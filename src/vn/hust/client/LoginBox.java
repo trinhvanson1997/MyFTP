@@ -153,11 +153,11 @@ public class LoginBox extends JFrame {
 		//tfHostname.setText("localhost");
 		tfHostname.setText("192.168.1.100");
 		tfUsername = new JTextField();
-
+tfUsername.setText("son");
 		tfPassword = new JTextField();
-
+tfPassword.setText("son");
 		tfPort = new JTextField();
-		tfPort.setText("21");
+		tfPort.setText("1997");
 
 		p.add(tfHostname);
 		p.add(tfUsername);

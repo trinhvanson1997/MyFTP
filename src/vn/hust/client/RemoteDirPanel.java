@@ -75,7 +75,6 @@ public class RemoteDirPanel extends JPanel implements ActionListener, ItemListen
 						} else {
 							curPath = curPath.substring(0, curPath.lastIndexOf('/'));
 						}
-
 						listDirectory(curPath);
 					} else {
 						String filename = table.getValueAt(table.getSelectedRow(), 0).toString();
@@ -158,20 +157,7 @@ public class RemoteDirPanel extends JPanel implements ActionListener, ItemListen
 		} else {
 			File[] files = client.listFiles(curPath); // lay danh sach file trong thu muc curPath
 
-			// khi lấy ds file từ server có thêm thư mục . .. nên -2
-			// khi lấy ở localhost không có . ..
-			// files = new FTPFile[tmp.length -2];
-			/*
-			 * files = new File[tmp.length]; int index = 0; if (files != null) { for (int i
-			 * = 0; i < tmp.length; i++) {
-			 * 
-			 * if (tmp[i].getName().equals(".") || tmp[i].getName().equals("..")) {
-			 * continue; } else { files[index] = tmp[i]; index++; }
-			 * 
-			 * }
-			 * 
-			 * } else { files = new File[0]; }
-			 */
+		
 			if (files != null) {
 				Arrays.sort(files);
 

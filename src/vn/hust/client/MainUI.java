@@ -17,7 +17,7 @@ public class MainUI extends JFrame {
 	private String hostname, username; // hien thi host, user va port tren giao dien
 	private int port;
 	private JButton btnLogOut;
-	
+	private JLabel lbStatus;
 
 	// private UploadThread upload;
 	private LocalDirPanel localDirPanel;
@@ -34,10 +34,10 @@ public class MainUI extends JFrame {
 
 		localDirPanel = new LocalDirPanel("D:\\");
 		remoteDirPanel = new RemoteDirPanel("/", client);
-		
-		new LocalDirPanelController(localDirPanel, remoteDirPanel, client, username);
+
+		new LocalDirPanelController(this, localDirPanel, remoteDirPanel, client, username);
 		new RemoteDirPanelController(localDirPanel, remoteDirPanel, client, username);
-		
+
 		setTitle("FTP CLient");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setSize(1000, 600);
@@ -46,10 +46,13 @@ public class MainUI extends JFrame {
 
 		add(createInfoPanel(), BorderLayout.NORTH);
 		add(createCenterPanel(), BorderLayout.CENTER);
-
+		
+		lbStatus = new JLabel("Status: ");
+		add(lbStatus, BorderLayout.SOUTH);
 		setResizable(false);
 		setVisible(true);
-createActions();
+	
+		createActions();
 	}
 
 	private JPanel createCenterPanel() {
@@ -59,14 +62,21 @@ createActions();
 		return p;
 	}
 
+	private JPanel createBottomPanel() {
+		JPanel p = new JPanel(new BorderLayout(10, 10));
+		
+		p.add(lbStatus, BorderLayout.CENTER);
+		return p;
+	}
+
 	private JPanel createInfoPanel() {
 		JPanel p = new JPanel(new FlowLayout(10, 10, 30));
 		p.setBorder(new EmptyBorder(5, 5, 5, 5));
 		p.add(new JLabel("Host:  " + this.hostname));
 		p.add(new JLabel("Username:  " + this.username));
 		p.add(new JLabel("Port: " + this.port));
-		
-		btnLogOut = new  JButton("Log out");
+
+		btnLogOut = new JButton("Log out");
 		p.add(btnLogOut);
 		return p;
 
@@ -74,7 +84,7 @@ createActions();
 
 	private void createActions() {
 		btnLogOut.addActionListener(new ActionListener() {
-			
+
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				// TODO Auto-generated method stub
@@ -87,15 +97,52 @@ createActions();
 				} else {
 					return;
 				}
-				
+
 			}
 		});
-		
-		
 
-	
-		
-	
 	}
+
+	public JButton getBtnLogOut() {
+		return btnLogOut;
+	}
+
+	public void setBtnLogOut(JButton btnLogOut) {
+		this.btnLogOut = btnLogOut;
+	}
+
+	public JLabel getLbStatus() {
+		return lbStatus;
+	}
+
+	public void setLbStatus(JLabel lbStatus) {
+		this.lbStatus = lbStatus;
+	}
+
+	public LocalDirPanel getLocalDirPanel() {
+		return localDirPanel;
+	}
+
+	public void setLocalDirPanel(LocalDirPanel localDirPanel) {
+		this.localDirPanel = localDirPanel;
+	}
+
+	public RemoteDirPanel getRemoteDirPanel() {
+		return remoteDirPanel;
+	}
+
+	public void setRemoteDirPanel(RemoteDirPanel remoteDirPanel) {
+		this.remoteDirPanel = remoteDirPanel;
+	}
+
+	public Client getClient() {
+		return client;
+	}
+
+	public void setClient(Client client) {
+		this.client = client;
+	}
+	
+	
 
 }

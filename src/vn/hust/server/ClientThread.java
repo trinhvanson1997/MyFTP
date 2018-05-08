@@ -16,11 +16,13 @@ import java.net.Socket;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 public class ClientThread extends Thread {
 	public static final int LOGIN = 1, GET_FILE = 2, GET_LIST_FILES = 3, UPLOAD = 4, CANCEL_UPLOAD = 5,
 			CONTINUE_UPLOAD = 6, CLOSE = 7, REGISTER = 8, CHECK_DIRECTORY = 9, DOWNLOAD = 10, CANCEL_DOWNLOAD = 11,
-			CONTINUE_DOWNLOAD = 12, CHECK_FILE = 13, GET_NAME = 14;
+			CONTINUE_DOWNLOAD = 12, CHECK_FILE = 13, GET_NAME = 14, UPLOAD_FOLDER = 15;
 	public String username;
 	public String homeDir = "C:\\Users\\sontrinh\\Desktop\\FTP\\";
 
@@ -35,13 +37,13 @@ public class ClientThread extends Thread {
 	public DBConnect db;
 	public List<String> listUsername;
 	public ServerUI serverUI;
-	
-	public ClientThread(Socket socket, DBConnect db, List<String> listUsername,ServerUI serverUI) {
+
+	public ClientThread(Socket socket, DBConnect db, List<String> listUsername, ServerUI serverUI) {
 		this.socket = socket;
 		this.db = db;
 		this.listUsername = listUsername;
 		this.serverUI = serverUI;
-		
+
 		try {
 			in = new DataInputStream(this.socket.getInputStream());
 			out = new DataOutputStream(this.socket.getOutputStream());
@@ -63,18 +65,17 @@ public class ClientThread extends Thread {
 				if (request == LOGIN) {
 					String username = in.readUTF();
 					String password = in.readUTF();
-					if(listUsername.contains(username)) {
+					if (listUsername.contains(username)) {
 						out.writeUTF("online");
-					}
-					else {
+					} else {
 						if (db.login(username, password)) {
 							this.username = username;
-							//Lưu đường dẫn đến thư mục trên server ứng với tài khoản đăng nhập
+							// Lưu đường dẫn đến thư mục trên server ứng với tài khoản đăng nhập
 							this.homeDir += this.username;
-							
-							//Lưu tài khoản vào danh sách đang online
+
+							// Lưu tài khoản vào danh sách đang online
 							this.listUsername.add(username);
-							this.serverUI.getTextArea().append(getDateNow()+" : Logged in successfully\n");
+							this.serverUI.getTextArea().append(getDateNow() + " : Logged in successfully\n");
 							out.writeUTF("correct");
 						} else
 							out.writeUTF("incorrect");
@@ -83,12 +84,12 @@ public class ClientThread extends Thread {
 				} else if (request == REGISTER) {
 					String username = in.readUTF();
 					String password = in.readUTF();
-					this.serverUI.getTextArea().append(getDateNow()+" : Registered \n");
+					this.serverUI.getTextArea().append(getDateNow() + " : Registered \n");
 					if (db.register(username, password)) {
 						String path = this.homeDir + username;
 						File file = new File(path);
 						file.mkdirs();
-						
+
 						out.writeBoolean(true);
 
 					} else
@@ -101,6 +102,8 @@ public class ClientThread extends Thread {
 
 					File file = new File(path);
 
+				
+					
 					if (file.isDirectory()) {
 						out.writeBoolean(true);
 						out.flush();
@@ -111,8 +114,8 @@ public class ClientThread extends Thread {
 				} else if (request == CHECK_FILE) {
 
 					String path = in.readUTF();
-					System.out.println("CHECK FILE: "+path);
-					path = this.homeDir.replace('\\',	 '/')+path;
+				
+					path = this.homeDir.replace('\\', '/') + path;
 					File file = new File(path);
 
 					if (file.isFile()) {
@@ -128,6 +131,7 @@ public class ClientThread extends Thread {
 					path = path.replace('/', '\\');
 					path = homeDir + path;
 					
+					System.out.println("GET FILE: "+ path);
 					File file = new File(path);
 
 					oos.writeObject(file);
@@ -147,7 +151,7 @@ public class ClientThread extends Thread {
 					String path = in.readUTF();
 					path = path.replace("/", "\\");
 					path = homeDir + path;
-					this.serverUI.getTextArea().append(getDateNow()+" : List directory "+path+"\n");
+					this.serverUI.getTextArea().append(getDateNow() + " : List directory " + path + "\n");
 					File file = new File(path);
 					File[] files = file.listFiles();
 
@@ -161,10 +165,11 @@ public class ClientThread extends Thread {
 
 				} else if (request == UPLOAD) {
 					System.out.println("-------UPLOADING---------");
-				
+
 					String remotePath = in.readUTF();
 					remotePath = this.homeDir.replace('\\', '/') + remotePath;
-					this.serverUI.getTextArea().append(getDateNow()+" : Recieving file "+remotePath.replace('/', '\\')+"\n");
+					this.serverUI.getTextArea()
+							.append(getDateNow() + " : Recieving file " + remotePath.replace('/', '\\') + "\n");
 					int numberFile = in.readInt();
 					int resume = CONTINUE_UPLOAD;
 					int curNumber = 0; // lưu file thứ i đang được upload
@@ -186,7 +191,7 @@ public class ClientThread extends Thread {
 								in.readFully(bytes, 0, read);
 								os2.write(bytes, 0, read);
 							} else if (resume == CANCEL_UPLOAD) {
-								this.serverUI.getTextArea().append(getDateNow()+" : Cancel recieving  file\n");
+								this.serverUI.getTextArea().append(getDateNow() + " : Cancel recieving  file\n");
 								// break out of 2 loops
 								System.out.println("Cancel recieve file");
 								curNumber = i;
@@ -201,7 +206,7 @@ public class ClientThread extends Thread {
 					}
 					if (resume == CONTINUE_UPLOAD) {
 						joinFile(remotePath, numberFile);
-						this.serverUI.getTextArea().append(getDateNow()+" : Recieved file successfully\n");
+						this.serverUI.getTextArea().append(getDateNow() + " : Recieved file successfully\n");
 					} else if (resume == CANCEL_UPLOAD) {
 						for (int t = 1; t <= curNumber; t++) {
 							File file = new File(remotePath + "-part" + t);
@@ -211,14 +216,74 @@ public class ClientThread extends Thread {
 
 					out.writeUTF("complete");
 					out.flush();
+				} else if (request == UPLOAD_FOLDER) {
+					System.out.println("-------UPLOADING---------");
+
+					String remotePath = in.readUTF();
+					remotePath = this.homeDir.replace('\\', '/') + remotePath;
+					this.serverUI.getTextArea()
+							.append(getDateNow() + " : Recieving file " + remotePath.replace('/', '\\') + "\n");
+					int numberFile = in.readInt();
+					int resume = CONTINUE_UPLOAD;
+					int curNumber = 0; // lưu file thứ i đang được upload
+					for (int i = 1; i <= numberFile; i++) {
+
+						System.out.println("recieving part " + i);
+						OutputStream os2 = new BufferedOutputStream(new FileOutputStream(remotePath + "-part" + i));
+
+						int num = in.readInt();
+
+						for (int j = 0; j < num; j++) {
+							resume = in.readInt();
+
+							if (resume == CONTINUE_UPLOAD) {
+
+								int read = in.readInt();
+
+								byte[] bytes = new byte[read];
+								in.readFully(bytes, 0, read);
+								os2.write(bytes, 0, read);
+							} else if (resume == CANCEL_UPLOAD) {
+								this.serverUI.getTextArea().append(getDateNow() + " : Cancel recieving  file\n");
+								// break out of 2 loops
+								System.out.println("Cancel recieve file");
+								curNumber = i;
+								i = numberFile + 1;
+								j = num;
+								break;
+							}
+
+						}
+						os2.close();
+
+					}
+					if (resume == CONTINUE_UPLOAD) {
+						joinFile(remotePath, numberFile);
+						this.serverUI.getTextArea().append(getDateNow() + " : Recieved file successfully\n");
+
+						unZip(remotePath, remotePath.substring(0, remotePath.lastIndexOf('.')));
+
+					} else if (resume == CANCEL_UPLOAD) {
+						for (int t = 1; t <= curNumber; t++) {
+							File file = new File(remotePath + "-part" + t);
+							file.delete();
+
+						}
+
+					}
+					File f = new File(remotePath);
+					f.delete();
+					out.writeUTF("complete");
+					out.flush();
 				} else if (request == DOWNLOAD) {
 					System.out.println("-------DOWNLOADING---------");
-				
+
 					String remote = in.readUTF();
 					String path = this.homeDir.replace('\\', '/') + remote;
-					this.serverUI.getTextArea().append(getDateNow()+" : Sending file "+path.replace('/','\\')+"\n");
-					int numberFile = 4;
-					out.writeInt(numberFile);
+					this.serverUI.getTextArea()
+							.append(getDateNow() + " : Sending file " + path.replace('/', '\\') + "\n");
+					int numberFile1 = 4;
+					out.writeInt(numberFile1);
 					out.flush();
 
 					File remoteFile = new File(path);
@@ -226,19 +291,19 @@ public class ClientThread extends Thread {
 					out.writeLong(len);
 					out.flush();
 
-					long sizeFile = len / numberFile;
+					long sizeFile = len / numberFile1;
 
 					InputStream is = new FileInputStream(remoteFile);
 					System.out.println("Starting download");
-					int resume = CONTINUE_DOWNLOAD;
+					int resume1 = CONTINUE_DOWNLOAD;
 					int read = -1;
 					long count = 0, size, limit;
 					int num;
 					byte[] bytes = new byte[4096];
 
-					for (int i = 1; i <= numberFile; i++) {
+					for (int i = 1; i <= numberFile1; i++) {
 						System.out.println("Sending part " + i);
-						if (i < numberFile) {
+						if (i < numberFile1) {
 							size = sizeFile;
 							limit = size * i;
 						} else {
@@ -255,8 +320,8 @@ public class ClientThread extends Thread {
 						out.flush();
 
 						for (int j = 0; j < num; j++) {
-							resume = in.readInt();
-							if (resume == CONTINUE_DOWNLOAD) {
+							resume1 = in.readInt();
+							if (resume1 == CONTINUE_DOWNLOAD) {
 
 								if ((limit - count) < 4096)
 									bytes = new byte[(int) (limit - count)];
@@ -276,9 +341,9 @@ public class ClientThread extends Thread {
 								// send arr
 								out.write(bytes);
 								out.flush();
-							} else if (resume == CANCEL_DOWNLOAD) {
-								this.serverUI.getTextArea().append(getDateNow()+" : Cancel downloading file ");
-								i = numberFile + 1;
+							} else if (resume1 == CANCEL_DOWNLOAD) {
+								this.serverUI.getTextArea().append(getDateNow() + " : Cancel downloading file ");
+								i = numberFile1 + 1;
 								j = num;
 								break;
 							}
@@ -292,7 +357,8 @@ public class ClientThread extends Thread {
 					System.out.println("Recieve close request from client");
 					System.out.println("Closing this thread......");
 					this.listUsername.remove(this.username);
-					this.serverUI.getTextArea().append(getDateNow()+" : Disconnected to client with username "+this.username+"\n");
+					this.serverUI.getTextArea()
+							.append(getDateNow() + " : Disconnected to client with username " + this.username + "\n");
 					socket.close();
 					openThread = false;
 				}
@@ -334,7 +400,37 @@ public class ClientThread extends Thread {
 		}
 
 	}
-	
+
+	public void unZip(String zipFile, String outputFolder) {
+		byte[] buffer = new byte[1024];
+		try {
+			File folder = new File(outputFolder);
+			if (!folder.exists()) {
+				folder.mkdir();
+			}
+			ZipInputStream zis = new ZipInputStream(new FileInputStream(zipFile));
+			ZipEntry ze = zis.getNextEntry();
+			while (ze != null) {
+				String fileName = ze.getName();
+				File newFile = new File(outputFolder + File.separator + fileName);
+				
+				new File(newFile.getParent()).mkdirs();
+				FileOutputStream fos = new FileOutputStream(newFile);
+				int len;
+				while ((len = zis.read(buffer)) > 0) {
+					fos.write(buffer, 0, len);
+				}
+				fos.close();
+				ze = zis.getNextEntry();
+			}
+			zis.closeEntry();
+			zis.close();
+
+		} catch (IOException ex) {
+			ex.printStackTrace();
+		}
+	}
+
 	public String getDateNow() {
 		String pattern = "HH:mm:ss";
 		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(pattern);

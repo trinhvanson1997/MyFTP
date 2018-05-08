@@ -17,8 +17,8 @@ import javax.swing.JProgressBar;
 import javax.swing.Timer;
 import javax.swing.border.EmptyBorder;
 
-public class UploadThread implements Runnable, ActionListener {
-	public static final int UPLOAD = 4,CANCEL_UPLOAD = 5,CONTINUE_UPLOAD=6;
+public class UploadFolderThread implements Runnable, ActionListener {
+	public static final int UPLOAD_FOLDER = 15, CANCEL_UPLOAD = 5, CONTINUE_UPLOAD = 6;
 	private Client client;
 
 	// đường dẫn nguồn
@@ -48,7 +48,7 @@ public class UploadThread implements Runnable, ActionListener {
 
 	private RemoteDirPanel remoteDirPanel;
 
-	public UploadThread(Client client, String localPath, String remotePath, RemoteDirPanel remoteDirPanel) {
+	public UploadFolderThread(Client client, String localPath, String remotePath, RemoteDirPanel remoteDirPanel) {
 		this.client = client;
 		this.localPath = localPath;
 		this.remotePath = remotePath;
@@ -101,7 +101,7 @@ public class UploadThread implements Runnable, ActionListener {
 	@Override
 	public void run() {
 		try {
-			client.out.writeInt(UPLOAD);
+			client.out.writeInt(UPLOAD_FOLDER);
 			client.out.flush();
 
 			client.out.writeUTF(remotePath);
@@ -111,7 +111,7 @@ public class UploadThread implements Runnable, ActionListener {
 
 			File localFile = new File(this.localPath);
 			len = localFile.length();
-			
+
 			sizeFile = len / numberFile;
 
 			InputStream is = new FileInputStream(localFile);
@@ -153,18 +153,17 @@ public class UploadThread implements Runnable, ActionListener {
 
 					if (cancel) {
 						System.out.println("Cancel upload file to server");
-						//trước khi hủy upload cần gửi lệnh đến server
-						//đồng thời xóa các file đã được upload
+						// trước khi hủy upload cần gửi lệnh đến server
+						// đồng thời xóa các file đã được upload
 						client.out.writeInt(CANCEL_UPLOAD);
 						client.out.flush();
 						frame.dispose();
-						//break two loop
-						i=numberFile+1;
+						// break two loop
+						i = numberFile + 1;
 						j = num;
-						
+
 						break;
-					}
-					else {
+					} else {
 						client.out.writeInt(CONTINUE_UPLOAD);
 						client.out.flush();
 					}
@@ -188,10 +187,11 @@ public class UploadThread implements Runnable, ActionListener {
 
 			}
 			is.close();
-			
-			if(client.in.readUTF().equals("complete")) {
+
+			if (client.in.readUTF().equals("complete")) {
 				this.remoteDirPanel.listDirectory(this.remoteDirPanel.getCurPath());
-				
+				File file = new File(localPath);
+				file.delete();
 			}
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block
@@ -260,14 +260,12 @@ public class UploadThread implements Runnable, ActionListener {
 		}
 
 		if (e.getSource() == btnCancel) {
-	/*		if (JOptionPane.showConfirmDialog(null, "Are you sure want to cancel?", "WARNING",
-					JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
-				resume();
-				cancel = true;
-
-			} else {
-				return;
-			}*/
+			/*
+			 * if (JOptionPane.showConfirmDialog(null, "Are you sure want to cancel?",
+			 * "WARNING", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) { resume();
+			 * cancel = true; File file = new File(localPath); file.delete(); } else {
+			 * return; }
+			 */
 			resume();
 			cancel = true;
 		}
@@ -275,4 +273,3 @@ public class UploadThread implements Runnable, ActionListener {
 	}
 
 }
-
