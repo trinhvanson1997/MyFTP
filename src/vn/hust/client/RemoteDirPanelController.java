@@ -14,6 +14,13 @@ public class RemoteDirPanelController {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				// TODO Auto-generated method stub
+				int row = remoteDirPanel.getTable().getSelectedRow();
+				if (row == -1 || row == 0) {
+					JOptionPane.showMessageDialog(null, "Please choose file or folder you want to download");
+				}
+
+				else {
+				
 				String remote = remoteDirPanel.getDetails().getText();
 
 				File remoteFile = client.getFile(remote);
@@ -57,7 +64,7 @@ public class RemoteDirPanelController {
 						downloadThread.start();
 					}
 				}
-
+				}
 			}
 		});
 

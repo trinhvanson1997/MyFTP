@@ -41,6 +41,7 @@ public class MainUI extends JFrame {
 		new RemoteDirPanelController(localDirPanel, remoteDirPanel, client, username);
 
 		setTitle("FTP CLient");
+		setIconImage(new ImageIcon("icons/icon.png").getImage());
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setSize(1000, 600);
 		setLocationRelativeTo(null);

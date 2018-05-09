@@ -29,6 +29,7 @@ public class LoginBox extends JFrame {
 	public LoginBox() {
 
 		setTitle("Login");
+		setIconImage(new ImageIcon("icons/icon.png").getImage());
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setSize(300, 500);
 		setLocationRelativeTo(null);

@@ -102,7 +102,7 @@ public class RemoteDirPanel extends JPanel implements ActionListener, ItemListen
 	private JPanel createButtonPanel() {
 		JPanel p = new JPanel(new FlowLayout(10, 10, 10));
 		Icon icon = new ImageIcon("icons/download.png");
-		btnDownload = createButton("Upload");
+		btnDownload = createButton("Download");
 		btnDownload.setIcon(icon);
 
 		icon = new ImageIcon("icons/add.png");
