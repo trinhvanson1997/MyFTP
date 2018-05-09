@@ -117,17 +117,22 @@ public class LocalDirPanelController {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				String name = JOptionPane.showInputDialog("Enter directory name here");
-				String path = getCurrentDirectoryPath();
-				path = path + "\\" + name;
-				File file = new File(path);
-				if (file.isDirectory()) {
-					JOptionPane.showMessageDialog(null, "This directory 's already existed, Please choose other name!");
+
+				if (name != null) {
+					String path = getCurrentDirectoryPath();
+					path = path + "\\" + name;
+					File file = new File(path);
+					if (file.isDirectory()) {
+						JOptionPane.showMessageDialog(null,
+								"This directory 's already existed, Please choose other name!");
+						return;
+					} else {
+						file.mkdir();
+						JOptionPane.showMessageDialog(null, "Created directory " + name);
+						localDirPanel.listDirectory(localDirPanel.getCurPath());
+					}
+				} else
 					return;
-				} else {
-					file.mkdir();
-					JOptionPane.showMessageDialog(null, "Created directory " + name);
-					localDirPanel.listDirectory(localDirPanel.getCurPath());
-				}
 			}
 
 		});
@@ -135,21 +140,40 @@ public class LocalDirPanelController {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				String path = getCurrentFilePath();
-				if (path == null)
-					return;
-				else {
+				int row = localDirPanel.getTable().getSelectedRow();
+				if (row == -1 || row == 0) {
+					JOptionPane.showMessageDialog(null, "Please choose file or folder you want to delete");
+				}
 
-					int choice = JOptionPane.showConfirmDialog(null, "Are you sure want to delete this file?",
-							"Warning", JOptionPane.YES_NO_OPTION);
-					if (choice == JOptionPane.YES_OPTION) {
-						File file = new File(path);
-						String name = file.getName();
-						file.delete();
-						JOptionPane.showMessageDialog(null, "Deleted file " + name);
-						localDirPanel.listDirectory(localDirPanel.getCurPath());
-					} else
-						return;
+				else {
+					String path = getCurrentFilePath();
+					File f = new File(path);
+					if (f.isFile()) {
+						int choice = JOptionPane.showConfirmDialog(null, "Are you sure want to delete this file?",
+								"Warning", JOptionPane.YES_NO_OPTION);
+						if (choice == JOptionPane.YES_OPTION) {
+
+							String name = f.getName();
+							f.delete();
+							JOptionPane.showMessageDialog(null, "Deleted file " + name);
+							localDirPanel.listDirectory(localDirPanel.getCurPath());
+						} else
+							return;
+					}
+
+					if (f.isDirectory()) {
+						int choice = JOptionPane.showConfirmDialog(null, "Are you sure want to delete this file?",
+								"Warning", JOptionPane.YES_NO_OPTION);
+						if (choice == JOptionPane.YES_OPTION) {
+							String name = f.getName();
+							if (deleteFolder(f)) {
+								JOptionPane.showMessageDialog(null, "Deleted folder " + name);
+								localDirPanel.listDirectory(localDirPanel.getCurPath());
+							}
+						} else
+							return;
+					}
+
 				}
 			}
 
@@ -159,29 +183,48 @@ public class LocalDirPanelController {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-
-				String filePath = getCurrentFilePath();
-				String dirPath = getCurrentDirectoryPath();
-
-				if (filePath.equals(null))
-					return;
-				else {
+				int row = localDirPanel.getTable().getSelectedRow();
+				if (row == -1 || row == 0) {
+					JOptionPane.showMessageDialog(null, "Please choose file or folder you want to rename");
+				} else {
+					String filePath = getCurrentFilePath();
+					String dirPath = getCurrentDirectoryPath();
 
 					File oldFile = new File(filePath);
 
-					String oldName = oldFile.getName().substring(0, oldFile.getName().lastIndexOf('.'));
-					String extend = oldFile.getName().substring(oldFile.getName().lastIndexOf('.'));
+					if (oldFile.isFile()) {
+						String oldName = oldFile.getName().substring(0, oldFile.getName().lastIndexOf('.'));
+						String extend = oldFile.getName().substring(oldFile.getName().lastIndexOf('.'));
 
-					String newName = JOptionPane.showInputDialog("Enter new name here");
-					if (oldName.equals(newName)) {
-						JOptionPane.showMessageDialog(null, "No change");
-						return;
+						String newName = JOptionPane.showInputDialog("Enter new name here");
+						if (newName != null) {
+							if (oldName.equals(newName)) {
+								JOptionPane.showMessageDialog(null, "No change");
+								return;
+							} else {
+								File newFile = new File(dirPath + "\\" + newName + extend);
+								oldFile.renameTo(newFile);
+								JOptionPane.showMessageDialog(null, "Renamed successfully");
+								localDirPanel.listDirectory(localDirPanel.getCurPath());
+							}
+						} else
+							return;
 					}
-					{
-						File newFile = new File(dirPath + "\\" + newName + extend);
-						oldFile.renameTo(newFile);
-						JOptionPane.showMessageDialog(null, "Renamed successfully");
-						localDirPanel.listDirectory(localDirPanel.getCurPath());
+					if (oldFile.isDirectory()) {
+						String oldName = oldFile.getName();
+						String newName = JOptionPane.showInputDialog("Enter new name here");
+						if (newName != null) {
+							if (oldName.equals(newName)) {
+								JOptionPane.showMessageDialog(null, "No change");
+								return;
+							} else {
+								File newFile = new File(dirPath + "\\" + newName);
+								oldFile.renameTo(newFile);
+								JOptionPane.showMessageDialog(null, "Renamed successfully");
+								localDirPanel.listDirectory(localDirPanel.getCurPath());
+							}
+						} else
+							return;
 					}
 				}
 			}
@@ -196,17 +239,40 @@ public class LocalDirPanelController {
 	private String getCurrentFilePath() {
 		String local = localDirPanel.getDetails().getText();
 		File file = new File(local);
-		if (file.isFile()) {
-			return file.getAbsolutePath();
-		} else {
-			JOptionPane.showMessageDialog(null, "This is not a file");
+		return file.getAbsolutePath();
+	}
 
+	public boolean deleteFolder(File folder) {
+
+		if (folder == null)
+			return false;
+
+		if (!folder.exists())
+			return true;
+
+		if (!folder.isDirectory())
+			return false;
+
+		String[] list = folder.list();
+		if (list != null) {
+			for (int i = 0; i < list.length; i++) {
+				File entry = new File(folder, list[i]);
+
+				if (entry.isDirectory()) {
+					if (!deleteFolder(entry))
+						return false;
+				} else {
+					if (!entry.delete())
+						return false;
+				}
+			}
 		}
-		return null;
+
+		return folder.delete();
 	}
 
 	private void upload(Client client, String local, String remote, RemoteDirPanel remoteDirPanel) {
-	
+
 		UploadThread upload = new UploadThread(client, local, remote, remoteDirPanel);
 
 		Thread upThread = new Thread(upload);
@@ -214,7 +280,7 @@ public class LocalDirPanelController {
 	}
 
 	private void uploadFolder(Client client, String local, String remote, RemoteDirPanel remoteDirPanel) {
-	
+
 		UploadFolderThread upload = new UploadFolderThread(client, local, remote, remoteDirPanel);
 
 		Thread upThread = new Thread(upload);

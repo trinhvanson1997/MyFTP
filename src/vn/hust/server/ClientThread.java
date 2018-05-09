@@ -24,8 +24,9 @@ import java.util.zip.ZipOutputStream;
 public class ClientThread extends Thread {
 	public static final int LOGIN = 1, GET_FILE = 2, GET_LIST_FILES = 3, UPLOAD = 4, CANCEL_UPLOAD = 5,
 			CONTINUE_UPLOAD = 6, CLOSE = 7, REGISTER = 8, CHECK_DIRECTORY = 9, DOWNLOAD = 10, CANCEL_DOWNLOAD = 11,
-			CONTINUE_DOWNLOAD = 12, CHECK_FILE = 13, GET_NAME = 14, UPLOAD_FOLDER = 15, GET_SIZE =16,
-			GET_LASTMODIFIED = 17,CHECK_FILE_BY_PATH=18,DOWNLOAD_FOLDER=19;
+			CONTINUE_DOWNLOAD = 12, CHECK_FILE = 13, GET_NAME = 14, UPLOAD_FOLDER = 15, GET_SIZE = 16,
+			GET_LASTMODIFIED = 17, CHECK_FILE_BY_PATH = 18, DOWNLOAD_FOLDER = 19, MAKE_DIR = 20, DELETE = 21,
+			RENAME = 22;
 	public String username;
 	public String homeDir = "C:\\Users\\sontrinh\\Desktop\\FTP\\";
 
@@ -41,19 +42,17 @@ public class ClientThread extends Thread {
 	public List<String> listUsername;
 	public ServerUI serverUI;
 
-	
 	public String srcZip;
 	public String nameFileZip;
 	String des = "";
 	public List<String> fileList = new ArrayList<>();
-	
+
 	public ClientThread(Socket socket, DBConnect db, List<String> listUsername, ServerUI serverUI) {
 		this.socket = socket;
 		this.db = db;
 		this.listUsername = listUsername;
 		this.serverUI = serverUI;
 
-		
 		try {
 			in = new DataInputStream(this.socket.getInputStream());
 			out = new DataOutputStream(this.socket.getOutputStream());
@@ -112,8 +111,6 @@ public class ClientThread extends Thread {
 
 					File file = new File(path);
 
-				
-					
 					if (file.isDirectory()) {
 						out.writeBoolean(true);
 						out.flush();
@@ -124,7 +121,7 @@ public class ClientThread extends Thread {
 				} else if (request == CHECK_FILE) {
 
 					String path = in.readUTF();
-				
+
 					path = this.homeDir.replace('\\', '/') + path;
 					File file = new File(path);
 
@@ -135,28 +132,27 @@ public class ClientThread extends Thread {
 						out.writeBoolean(false);
 						out.flush();
 					}
-				
-			} else if (request == CHECK_FILE_BY_PATH) {
 
-				String path = in.readUTF();
-			
-			
-				File file = new File(path);
+				} else if (request == CHECK_FILE_BY_PATH) {
 
-				if (file.isFile()) {
-					out.writeBoolean(true);
-					out.flush();
-				} else {
-					out.writeBoolean(false);
-					out.flush();
-				}
-			}else if (request == GET_FILE) {
+					String path = in.readUTF();
+
+					File file = new File(path);
+
+					if (file.isFile()) {
+						out.writeBoolean(true);
+						out.flush();
+					} else {
+						out.writeBoolean(false);
+						out.flush();
+					}
+				} else if (request == GET_FILE) {
 					String path = in.readUTF();
 
 					path = path.replace('/', '\\');
 					path = homeDir + path;
-				
-					System.out.println("GET FILE: "+ path);
+
+					System.out.println("GET FILE: " + path);
 					File file = new File(path);
 
 					oos.writeObject(file);
@@ -171,22 +167,19 @@ public class ClientThread extends Thread {
 
 					out.writeUTF(file.getName());
 					out.flush();
-				}
-				else if(request == GET_SIZE) {
+				} else if (request == GET_SIZE) {
 					String path = in.readUTF();
 					File file = new File(path);
-					
+
 					out.writeLong(file.length());
 					out.flush();
-				}
-				else if(request == GET_LASTMODIFIED) {
+				} else if (request == GET_LASTMODIFIED) {
 					String path = in.readUTF();
 					File file = new File(path);
-					
+
 					out.writeLong(file.lastModified());
 					out.flush();
-				}
-				else if (request == GET_LIST_FILES) {
+				} else if (request == GET_LIST_FILES) {
 
 					String path = in.readUTF();
 					path = path.replace("/", "\\");
@@ -198,8 +191,7 @@ public class ClientThread extends Thread {
 					out.writeInt(files.length);
 					out.flush();
 
-					for(int i=0;i<files.length;i++)
-					{
+					for (int i = 0; i < files.length; i++) {
 						oos.writeObject(files[i]);
 						oos.flush();
 					}
@@ -394,102 +386,171 @@ public class ClientThread extends Thread {
 					out.writeUTF("complete");
 					out.flush();
 
-				}
-				 else if (request == DOWNLOAD_FOLDER) {
-						System.out.println("-------DOWNLOADING---------");
+				} else if (request == DOWNLOAD_FOLDER) {
+					System.out.println("-------DOWNLOADING---------");
 
-						String remote = in.readUTF();
-						String path = this.homeDir.replace('\\', '/') + remote;
-						
-						srcZip = path;
+					String remote = in.readUTF();
+					String path = this.homeDir.replace('\\', '/') + remote;
 
-						File f = new File(srcZip);
-						des = f.getAbsolutePath() + ".zip";
-						nameFileZip = f.getName();
-						
-						fileList.removeAll(fileList);
-						
-						getFileList(f);
-						
-						zip();
-						path = des;
-						this.serverUI.getTextArea()
-								.append(getDateNow() + " : Sending file " + path.replace('/', '\\') + "\n");
-						int numberFile1 = 4;
-						out.writeInt(numberFile1);
+					srcZip = path;
+
+					File f = new File(srcZip);
+					des = f.getAbsolutePath() + ".zip";
+					nameFileZip = f.getName();
+
+					fileList.removeAll(fileList);
+
+					getFileList(f);
+
+					zip();
+					path = des;
+					this.serverUI.getTextArea()
+							.append(getDateNow() + " : Sending file " + path.replace('/', '\\') + "\n");
+					int numberFile1 = 4;
+					out.writeInt(numberFile1);
+					out.flush();
+
+					File remoteFile = new File(path);
+					long len = remoteFile.length();
+					out.writeLong(len);
+					out.flush();
+
+					long sizeFile = len / numberFile1;
+
+					InputStream is = new FileInputStream(remoteFile);
+					System.out.println("Starting download");
+					int resume1 = CONTINUE_DOWNLOAD;
+					int read = -1;
+					long count = 0, size, limit;
+					int num;
+					byte[] bytes = new byte[4096];
+
+					for (int i = 1; i <= numberFile1; i++) {
+						System.out.println("Sending part " + i);
+						if (i < numberFile1) {
+							size = sizeFile;
+							limit = size * i;
+						} else {
+							size = len - (sizeFile * 3);
+							limit = len;
+						}
+
+						if ((int) (size % 4096) == 0) {
+							num = (int) (size / 4096);
+						} else {
+							num = (int) (size / 4096) + 1;
+						}
+						out.writeInt(num);
 						out.flush();
 
-						File remoteFile = new File(path);
-						long len = remoteFile.length();
-						out.writeLong(len);
-						out.flush();
+						for (int j = 0; j < num; j++) {
+							resume1 = in.readInt();
+							if (resume1 == CONTINUE_DOWNLOAD) {
 
-						long sizeFile = len / numberFile1;
+								if ((limit - count) < 4096)
+									bytes = new byte[(int) (limit - count)];
+								else
+									bytes = new byte[4096];
 
-						InputStream is = new FileInputStream(remoteFile);
-						System.out.println("Starting download");
-						int resume1 = CONTINUE_DOWNLOAD;
-						int read = -1;
-						long count = 0, size, limit;
-						int num;
-						byte[] bytes = new byte[4096];
+								read = is.read(bytes);
 
-						for (int i = 1; i <= numberFile1; i++) {
-							System.out.println("Sending part " + i);
-							if (i < numberFile1) {
-								size = sizeFile;
-								limit = size * i;
-							} else {
-								size = len - (sizeFile * 3);
-								limit = len;
-							}
+								count += read;
+								out.writeLong(count);
+								out.flush();
 
-							if ((int) (size % 4096) == 0) {
-								num = (int) (size / 4096);
-							} else {
-								num = (int) (size / 4096) + 1;
-							}
-							out.writeInt(num);
-							out.flush();
+								// send size of arr
+								out.writeInt(read);
+								out.flush();
 
-							for (int j = 0; j < num; j++) {
-								resume1 = in.readInt();
-								if (resume1 == CONTINUE_DOWNLOAD) {
-
-									if ((limit - count) < 4096)
-										bytes = new byte[(int) (limit - count)];
-									else
-										bytes = new byte[4096];
-
-									read = is.read(bytes);
-
-									count += read;
-									out.writeLong(count);
-									out.flush();
-
-									// send size of arr
-									out.writeInt(read);
-									out.flush();
-
-									// send arr
-									out.write(bytes);
-									out.flush();
-								} else if (resume1 == CANCEL_DOWNLOAD) {
-									this.serverUI.getTextArea().append(getDateNow() + " : Cancel downloading file ");
-									i = numberFile1 + 1;
-									j = num;
-									break;
-								}
+								// send arr
+								out.write(bytes);
+								out.flush();
+							} else if (resume1 == CANCEL_DOWNLOAD) {
+								this.serverUI.getTextArea().append(getDateNow() + " : Cancel downloading file ");
+								i = numberFile1 + 1;
+								j = num;
+								break;
 							}
 						}
-						is.close();
-						File file = new File(des);
-						file.delete();
-						
-						out.writeUTF("complete");
-						out.flush();
-
 					}
+					is.close();
+					File file = new File(des);
+					file.delete();
+
+					out.writeUTF("complete");
+					out.flush();
+
+				}
+
+				else if (request == MAKE_DIR) {
+					String path = in.readUTF();
+					path = this.homeDir + path;
+					path = path.replace('/', '\\');
+					System.out.println(path);
+
+					File file = new File(path);
+					if (file.isDirectory()) {
+						out.writeUTF("exist");
+						out.flush();
+					} else {
+						file.mkdir();
+						out.writeUTF("success");
+						out.flush();
+					}
+				}
+				else if(request == DELETE) {
+					String path = in.readUTF();
+					path = this.homeDir + path;
+					path = path.replace('/', '\\');
+					System.out.println(path);
+
+					File file = new File(path);
+					
+					if(file.isFile())
+						file.delete();
+					if(file.isDirectory())
+						deleteFolder(file);
+					
+					out.writeUTF("success");
+					out.flush();
+				}
+				else if(request == RENAME) {
+					String path = in.readUTF();
+					String newname = in.readUTF();
+					
+					File file = new File(path);
+					if(file.isDirectory()) {
+						String oldname = file.getName();
+						if(oldname.equals(newname))
+						{
+							out.writeUTF("nochange");
+							out.flush();
+						}
+						else {
+							File newFile= new File(file.getParent()+"\\"+newname);
+							file.renameTo(newFile);
+							out.writeUTF("change");
+							out.flush();
+						}
+					}
+					
+					if(file.isFile()) {
+						String oldname = file.getName();
+						String extend = oldname.substring(oldname.lastIndexOf('.'));
+						oldname = oldname.substring(0, oldname.lastIndexOf('.'));
+						
+						if(oldname.equals(newname)) {
+							out.writeUTF("nochange");
+							out.flush();
+						}
+						else {
+							File newFile= new File(file.getParent()+"\\"+newname+extend);
+							file.renameTo(newFile);
+							out.writeUTF("change");
+							out.flush();
+						}
+					}
+				}
 				else if (request == CLOSE) {
 					System.out.println("Recieve close request from client");
 					System.out.println("Closing this thread......");
@@ -550,7 +611,7 @@ public class ClientThread extends Thread {
 			while (ze != null) {
 				String fileName = ze.getName();
 				File newFile = new File(outputFolder + File.separator + fileName);
-				
+
 				new File(newFile.getParent()).mkdirs();
 				FileOutputStream fos = new FileOutputStream(newFile);
 				int len;
@@ -574,7 +635,7 @@ public class ClientThread extends Thread {
 		return simpleDateFormat.format(new Date());
 
 	}
-	
+
 	public void getFileList(File file) {
 		if (file.isFile())
 			fileList.add(generateZipEntry(file.getAbsolutePath().toString()));
@@ -584,9 +645,38 @@ public class ClientThread extends Thread {
 			}
 		}
 	}
-	
+
 	private String generateZipEntry(String file) {
 		return file.substring(srcZip.length() + 1, file.length());
+	}
+
+	public boolean deleteFolder(File folder) {
+
+		if (folder == null)
+			return false;
+
+		if (!folder.exists())
+			return true;
+
+		if (!folder.isDirectory())
+			return false;
+
+		String[] list = folder.list();
+		if (list != null) {
+			for (int i = 0; i < list.length; i++) {
+				File entry = new File(folder, list[i]);
+
+				if (entry.isDirectory()) {
+					if (!deleteFolder(entry))
+						return false;
+				} else {
+					if (!entry.delete())
+						return false;
+				}
+			}
+		}
+
+		return folder.delete();
 	}
 	
 	public void zip() {

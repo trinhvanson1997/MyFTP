@@ -7,6 +7,8 @@ import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.net.Socket;
 
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -61,7 +63,6 @@ public class LoginBox extends JFrame {
 
 						success = client.login(username, password);
 						if (success.equals("correct")) {
-						
 
 							System.out.println("Connected and Logged in to server !");
 							JOptionPane.showMessageDialog(null, "Logged in successfully");
@@ -76,11 +77,10 @@ public class LoginBox extends JFrame {
 								}
 							});
 
-						}
-						else if(success.equals("online")) {
-							JOptionPane.showMessageDialog(null, "This account is being used on other device! Please try again later!");
-						}
-						else {
+						} else if (success.equals("online")) {
+							JOptionPane.showMessageDialog(null,
+									"This account is being used on other device! Please try again later!");
+						} else {
 							JOptionPane.showMessageDialog(null, "Username or password is incorrect. Please try again!");
 						}
 
@@ -108,9 +108,9 @@ public class LoginBox extends JFrame {
 
 					JOptionPane.showMessageDialog(null, "Please fill out all fields!");
 				} else {
-					
+
 					Client client = new Client(hostname, port);
-				
+
 					// TODO Auto-generated method stub
 					if (client.register(username, password)) {
 						JOptionPane.showMessageDialog(null, "Registered successfully");
@@ -150,14 +150,14 @@ public class LoginBox extends JFrame {
 		 * tfUsername.setText("freev_21943005"); tfPassword = new JTextField();
 		 * tfPassword.setText("hslove");
 		 */
-		//tfHostname.setText("localhost");
+		// tfHostname.setText("localhost");
 		tfHostname.setText("192.168.1.100");
 		tfUsername = new JTextField();
-tfUsername.setText("son");
+		tfUsername.setText("son");
 		tfPassword = new JTextField();
-tfPassword.setText("son");
+		tfPassword.setText("son");
 		tfPort = new JTextField();
-		tfPort.setText("1997");
+		tfPort.setText("21");
 
 		p.add(tfHostname);
 		p.add(tfUsername);
@@ -172,6 +172,8 @@ tfPassword.setText("son");
 		p.setBorder(new EmptyBorder(10, 20, 10, 20));
 
 		btnConnect = new JButton("Connect to server");
+		Icon icon = new ImageIcon("icons/connect.png");
+		btnConnect.setIcon(icon);
 		btnRegister = new JButton("Register");
 
 		p.add(btnConnect);

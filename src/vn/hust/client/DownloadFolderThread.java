@@ -170,10 +170,11 @@ System.out.println("LOCAL: "+localPath);
 				unZip(localPath, localPath.substring(0,localPath.lastIndexOf('.')));
 			}
 			if(client.in.readUTF().equals("complete")) {
-				localDirPanel.listDirectory(localDirPanel.getCurPath());
+				
 				File file = new File(localPath);
 				file.delete();
 				JOptionPane.showMessageDialog(null, "Downloaded folder");
+				localDirPanel.listDirectory(localDirPanel.getCurPath());
 			}
 			
 				

@@ -13,7 +13,9 @@ import javax.swing.JOptionPane;
 
 public class Client {
 	public static final int LOGIN = 1, GET_FILE = 2, GET_LIST_FILES = 3, CLOSE = 7, REGISTER = 8,CHECK_DIRECTORY = 9,
-			CHECK_FILE=13, GET_NAME = 14,GET_SIZE =16, GET_LASTMODIFIED = 17,CHECK_FILE_BY_PATH=18;
+			CHECK_FILE=13, GET_NAME = 14,GET_SIZE =16, GET_LASTMODIFIED = 17,CHECK_FILE_BY_PATH=18, MAKE_DIR=20,
+			DELETE=21, RENAME= 22;
+	
 	public DataInputStream in;
 	public DataOutputStream out;
 	public ObjectInputStream ois;
@@ -236,6 +238,61 @@ public class Client {
 		return null;
 	}
 	
+	public String makeDir(String path) {
+		try {
+			out.writeInt(MAKE_DIR);
+			out.flush();
+			
+			out.writeUTF(path);
+			out.flush();
+			
+			String result = in.readUTF();
+			return result;
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;
+	}
+	
+	public String delete(String path) {
+		try {
+			out.writeInt(DELETE);
+			out.flush();
+			
+			out.writeUTF(path);
+			out.flush();
+			
+			String result = in.readUTF();
+			return result;
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;
+	}
+	
+	public String rename(String path,String newname) {
+		try {
+			out.writeInt(RENAME);
+			out.flush();
+			
+			out.writeUTF(path);
+			out.flush();
+			
+	
+			
+			out.writeUTF(newname);
+			out.flush();
+			
+			String result = in.readUTF();
+			return result;
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;
+	}
 
 	public void sendCloseRequest() {
 		try {

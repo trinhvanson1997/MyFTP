@@ -14,6 +14,8 @@ import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -42,7 +44,7 @@ public class RemoteDirPanel extends JPanel implements ActionListener, ItemListen
 		this.curPath = path;
 		this.client = client;
 
-		setPreferredSize(new Dimension(400, 400));
+		setPreferredSize(new Dimension(360, 400));
 		setLayout(new BorderLayout(5, 5));
 
 		add(createButtonPanel(), BorderLayout.NORTH);
@@ -99,10 +101,19 @@ public class RemoteDirPanel extends JPanel implements ActionListener, ItemListen
 
 	private JPanel createButtonPanel() {
 		JPanel p = new JPanel(new FlowLayout(10, 10, 10));
-		btnDownload = createButton("Download");
-		btnAdd = createButton("Add");
+		Icon icon = new ImageIcon("icons/download.png");
+		btnDownload = createButton("Upload");
+		btnDownload.setIcon(icon);
+
+		icon = new ImageIcon("icons/add.png");
+		btnAdd = createButton("Add Folder");
+		btnAdd.setIcon(icon);
+		icon = new ImageIcon("icons/delete.png");
 		btnDelete = createButton("Delete");
+		btnDelete.setIcon(icon);
+		icon = new ImageIcon("icons/rename.png");
 		btnRename = createButton("Rename");
+		btnRename.setIcon(icon);
 
 		p.add(btnDownload);
 		p.add(btnAdd);
@@ -125,9 +136,9 @@ public class RemoteDirPanel extends JPanel implements ActionListener, ItemListen
 		scroll = new JScrollPane();
 		scroll.setViewportView(table);
 
-		details = new JTextField(30);
+		details = new JTextField(40);
 		details.setEditable(false);
-		details.setFont(new Font("MonoSpaced", Font.PLAIN, 12));
+		details.setFont(new Font("MonoSpaced", Font.PLAIN, 13));
 
 		JPanel top = new JPanel(new FlowLayout());
 		top.add(new JLabel("Remote site"));

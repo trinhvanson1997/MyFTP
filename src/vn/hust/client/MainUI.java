@@ -4,8 +4,9 @@ import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
 
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -20,7 +21,7 @@ public class MainUI extends JFrame {
 	private JLabel lbStatus;
 	private JPanel statusPanel;
 	
-	// private UploadThread upload;
+
 	private LocalDirPanel localDirPanel;
 	private RemoteDirPanel remoteDirPanel;
 
@@ -78,6 +79,8 @@ public class MainUI extends JFrame {
 		p.add(new JLabel("Port: " + this.port));
 
 		btnLogOut = new JButton("Log out");
+		Icon icon = new ImageIcon("icons/logout.png");
+		btnLogOut.setIcon(icon);
 		p.add(btnLogOut);
 		return p;
 

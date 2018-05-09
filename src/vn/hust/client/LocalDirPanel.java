@@ -12,6 +12,8 @@ import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -28,22 +30,21 @@ public class LocalDirPanel extends JPanel implements ActionListener {
 
 	// hiển thị đường dẫn đến file hiện tại
 	private JTextField details;
-	
-	//thư mục hiện tại
+
+	// thư mục hiện tại
 	private File curDir;
-	
-	//lưu danh sách các file trong thư mục htai
+
+	// lưu danh sách các file trong thư mục htai
 	private File[] files;
-	
-	//đường dẫn đến thư mục htai
+
+	// đường dẫn đến thư mục htai
 	public String curPath;
-	
-	//hiển thị bảng danh sách file, thư mục
+
+	// hiển thị bảng danh sách file, thư mục
 	private JTable table;
 	private JScrollPane scroll;
 	private String[] columns = { "Name", "Type", "Size (kilobytes)", "Last Modified" };
 
-	
 	public LocalDirPanel(String path) {
 		this.curPath = path;
 		setPreferredSize(new Dimension(450, 400));
@@ -52,12 +53,10 @@ public class LocalDirPanel extends JPanel implements ActionListener {
 		add(createButtonPanel(), BorderLayout.NORTH);
 		add(createListPanel(), BorderLayout.CENTER);
 
-		
-		
 		table.addMouseListener(new MouseAdapter() {
 			public void mousePressed(MouseEvent mouseEvent) {
-				JTable tb = (JTable)mouseEvent.getSource();
-				if(mouseEvent.getClickCount() == 1) {
+				JTable tb = (JTable) mouseEvent.getSource();
+				if (mouseEvent.getClickCount() == 1) {
 					int i = table.getSelectedRow();
 					if (i == 0)
 						return;
@@ -65,8 +64,8 @@ public class LocalDirPanel extends JPanel implements ActionListener {
 					filename = curPath + "\\" + filename;
 					details.setText(filename);
 				}
-				
-				if(mouseEvent.getClickCount() == 2) {
+
+				if (mouseEvent.getClickCount() == 2) {
 					int i = table.getSelectedRow();
 					if (i == 0) {
 						String parent = curDir.getParent();
@@ -90,11 +89,20 @@ public class LocalDirPanel extends JPanel implements ActionListener {
 
 	private JPanel createButtonPanel() {
 		JPanel p = new JPanel(new FlowLayout(10, 10, 10));
-		btnUpload = createButton("Upload");
-		btnAdd = createButton("Add");
-		btnDelete = createButton("Delete");
-		btnRename = createButton("Rename");
 
+		Icon icon = new ImageIcon("icons/upload.png");
+		btnUpload = createButton("Upload");
+		btnUpload.setIcon(icon);
+
+		icon = new ImageIcon("icons/add.png");
+		btnAdd = createButton("Add Folder");
+		btnAdd.setIcon(icon);
+		icon = new ImageIcon("icons/delete.png");
+		btnDelete = createButton("Delete");
+		btnDelete.setIcon(icon);
+		icon = new ImageIcon("icons/rename.png");
+		btnRename = createButton("Rename");
+		btnRename.setIcon(icon);
 		p.add(btnUpload);
 		p.add(btnAdd);
 		p.add(btnDelete);
@@ -112,14 +120,13 @@ public class LocalDirPanel extends JPanel implements ActionListener {
 		table.setRowSelectionAllowed(true);
 		table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		table.setShowGrid(false);
-		
-		
+
 		scroll = new JScrollPane();
 		scroll.setViewportView(table);
 
 		details = new JTextField(40);
 		details.setEditable(false);
-		details.setFont(new Font("MonoSpaced", Font.PLAIN, 12));
+		details.setFont(new Font("MonoSpaced", Font.PLAIN, 13));
 
 		JPanel top = new JPanel(new FlowLayout());
 		top.add(new JLabel("Local site"));
@@ -145,19 +152,18 @@ public class LocalDirPanel extends JPanel implements ActionListener {
 		if (!dir.isDirectory()) {
 			System.out.println("not a directory");
 		} else {
-			
+
 			files = dir.listFiles();
 			if (files != null) {
 				Arrays.sort(files);
-				
-			}
-			else {
-				files=new File[0];
+
+			} else {
+				files = new File[0];
 			}
 			updateTable(files);
 			details.setText(curPath);
 			curDir = dir;
-			
+
 		}
 	}
 
@@ -168,17 +174,15 @@ public class LocalDirPanel extends JPanel implements ActionListener {
 		for (int i = 0; i < files.length; i++) {
 
 			data[i + 1][0] = files[i].getName();
-			if(files[i].isDirectory()) {
-				
+			if (files[i].isDirectory()) {
+
 				data[i + 1][2] = "";
-			}
-			else if(files[i].isFile()) {
+			} else if (files[i].isFile()) {
 				data[i + 1][1] = "file";
-				data[i + 1][2] = String.valueOf(files[i].length()/1024);
+				data[i + 1][2] = String.valueOf(files[i].length() / 1024);
+			} else {
+				data[i + 1][1] = "";
 			}
-			else {
-			data[i + 1][1] = "";}
-			
 
 			data[i + 1][3] = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(files[i].lastModified());
 		}
@@ -194,10 +198,6 @@ public class LocalDirPanel extends JPanel implements ActionListener {
 		table.setModel(tableModel);
 		tableModel.fireTableDataChanged();
 	}
-
-
-
-
 
 	public JButton getBtnUpload() {
 		return btnUpload;
@@ -290,7 +290,7 @@ public class LocalDirPanel extends JPanel implements ActionListener {
 	@Override
 	public void actionPerformed(ActionEvent arg0) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 }
