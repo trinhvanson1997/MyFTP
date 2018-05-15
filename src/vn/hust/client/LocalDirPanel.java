@@ -47,7 +47,7 @@ public class LocalDirPanel extends JPanel implements ActionListener {
 
 	public LocalDirPanel(String path) {
 		this.curPath = path;
-		setPreferredSize(new Dimension(480, 400));
+		setPreferredSize(new Dimension(450, 400));
 		setLayout(new BorderLayout(5, 5));
 
 		add(createButtonPanel(), BorderLayout.NORTH);

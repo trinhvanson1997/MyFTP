@@ -32,88 +32,83 @@ public class LocalDirPanelController {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				int row = localDirPanel.getTable().getSelectedRow();
-				if (row == -1 || row == 0) {
-					JOptionPane.showMessageDialog(null, "Please choose file or folder you want to upload");
+
+				String local = localDirPanel.getDetails().getText().replace("\\\\", "\\");
+				String remote = "";
+
+				File dir = new File(local);
+				if (dir.isFile()) {
+					local = local;
 				}
+				if (dir.isDirectory()) {
+					srcZip = local;
 
-				else {
-					String local = localDirPanel.getDetails().getText().replace("\\\\", "\\");
-					String remote = "";
+					File f = new File(srcZip);
+					des = f.getAbsolutePath() + ".zip";
+					nameFileZip = f.getName();
 
-					File dir = new File(local);
-					if (dir.isFile()) {
-						local = local;
-					}
-					if (dir.isDirectory()) {
-						srcZip = local;
+					fileList.removeAll(fileList);
 
-						File f = new File(srcZip);
-						des = f.getAbsolutePath() + ".zip";
-						nameFileZip = f.getName();
+					mainUI.getStatusPanel().remove(mainUI.getStatusPanel().getComponent(0));
+					JLabel l = new JLabel("Status: Getting list files");
+					mainUI.getStatusPanel().add(l, BorderLayout.CENTER);
+					mainUI.getStatusPanel().validate();
+					mainUI.getStatusPanel().repaint();
 
-						fileList.removeAll(fileList);
+					getFileList(f);
 
-						mainUI.getStatusPanel().remove(mainUI.getStatusPanel().getComponent(0));
-						JLabel l = new JLabel("Status: Getting list files");
-						mainUI.getStatusPanel().add(l, BorderLayout.CENTER);
-						mainUI.getStatusPanel().validate();
-						mainUI.getStatusPanel().repaint();
+					mainUI.getStatusPanel().remove(mainUI.getStatusPanel().getComponent(0));
+					l = new JLabel("Status: Zipping folder before uploading ");
+					mainUI.getStatusPanel().add(l, BorderLayout.CENTER);
+					mainUI.getStatusPanel().validate();
+					mainUI.getStatusPanel().repaint();
 
-						getFileList(f);
+					zip();
+					mainUI.getStatusPanel().remove(mainUI.getStatusPanel().getComponent(0));
+					l = new JLabel("Status: Ready to upload");
+					mainUI.getStatusPanel().add(l, BorderLayout.CENTER);
+					mainUI.getStatusPanel().validate();
+					mainUI.getStatusPanel().repaint();
 
-						mainUI.getStatusPanel().remove(mainUI.getStatusPanel().getComponent(0));
-						l = new JLabel("Status: Zipping folder before uploading ");
-						mainUI.getStatusPanel().add(l, BorderLayout.CENTER);
-						mainUI.getStatusPanel().validate();
-						mainUI.getStatusPanel().repaint();
+					local = des;
 
-						zip();
-						mainUI.getStatusPanel().remove(mainUI.getStatusPanel().getComponent(0));
-						l = new JLabel("Status: Ready to upload");
-						mainUI.getStatusPanel().add(l, BorderLayout.CENTER);
-						mainUI.getStatusPanel().validate();
-						mainUI.getStatusPanel().repaint();
-
-						local = des;
-
-					}
-					String name = dir.getName(); // tên của file cần upload
-					if (remoteDirPanel.getCurDir().getName().equals(username)) {
-						if (dir.isFile())
-							remote = "/" + name;
-						if (dir.isDirectory())
-							remote = "/" + name + ".zip";
-					} else {
-						if (dir.isFile())
-							remote = "/" + remoteDirPanel.getCurDir().getName() + "/" + name;
-						if (dir.isDirectory())
-							remote = "/" + remoteDirPanel.getCurDir().getName() + "/" + name + ".zip";
-					}
-					File remoteFile = client.getFile(remote);
-
+				}
+				String name = dir.getName(); // tên của file cần upload
+				if (remoteDirPanel.getCurDir().getName().equals(username)) {
+					if (dir.isFile())
+						remote = "/" + name;
 					if (dir.isDirectory())
-						remoteFile = client.getFile(remote.substring(0, remote.lastIndexOf('.')));
+						remote = "/" + name + ".zip";
+				} else {
+					if (dir.isFile())
+						remote = "/" + remoteDirPanel.getCurDir().getName() + "/" + name;
+					if (dir.isDirectory())
+						remote = "/" + remoteDirPanel.getCurDir().getName() + "/" + name + ".zip";
+				}
+				File remoteFile = client.getFile(remote);
 
-					if (client.checkDir(remoteFile.getAbsolutePath())
-							|| client.checkFileByPath(remoteFile.getAbsolutePath())) {
-						int choice = JOptionPane.showConfirmDialog(null, "This file existed. Do you want to replace?",
-								"Warning", JOptionPane.YES_NO_OPTION);
-						if (choice == JOptionPane.YES_OPTION) {
-							if (dir.isFile())
-								upload(client, local, remote, remoteDirPanel);
-							if (dir.isDirectory())
-								uploadFolder(client, local, remote, remoteDirPanel);
-						} else {
-							return;
-						}
-					} else {
+				if (dir.isDirectory())
+					remoteFile = client.getFile(remote.substring(0, remote.lastIndexOf('.')));
+
+				if (client.checkDir(remoteFile.getAbsolutePath())
+						|| client.checkFileByPath(remoteFile.getAbsolutePath())) {
+					int choice = JOptionPane.showConfirmDialog(null, "This file existed. Do you want to replace?",
+							"Warning", JOptionPane.YES_NO_OPTION);
+					if (choice == JOptionPane.YES_OPTION) {
 						if (dir.isFile())
 							upload(client, local, remote, remoteDirPanel);
 						if (dir.isDirectory())
 							uploadFolder(client, local, remote, remoteDirPanel);
+					} else {
+						return;
 					}
+				} else {
+					if (dir.isFile())
+						upload(client, local, remote, remoteDirPanel);
+					if (dir.isDirectory())
+						uploadFolder(client, local, remote, remoteDirPanel);
 				}
+
 			}
 		});
 
