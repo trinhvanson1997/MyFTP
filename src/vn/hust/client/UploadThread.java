@@ -185,17 +185,23 @@ public class UploadThread implements Runnable, ActionListener {
 					client.out.write(bytes);
 					client.out.flush();
 				}
-
 			}
 			is.close();
 			
-			if(client.in.readUTF().equals("complete")) {
+			String rs = client.in.readUTF();
+			if(rs.equals("complete")) {
 				this.remoteDirPanel.listDirectory(this.remoteDirPanel.getCurPath());
 				JOptionPane.showMessageDialog(null, "Uploaded file");
+			}
+			else if(rs.equals("cancel")) {
+				this.remoteDirPanel.listDirectory(this.remoteDirPanel.getCurPath());
+				JOptionPane.showMessageDialog(null, "Canceled to upload file");
 			}
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
+			JOptionPane.showMessageDialog(null, "Failed to upload");
+			System.exit(0);
 		}
 
 	}

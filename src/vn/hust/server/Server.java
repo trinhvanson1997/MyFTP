@@ -10,6 +10,9 @@ import java.util.List;
 public class Server {
 	public List<String> listUsername = new ArrayList<>();
 	public ServerUI serverUI;
+	public static final int MAX_THREADS = 3;
+	public int curNumThreads = 0;
+	
 	public Server(DBConnect db,ServerUI serverUI) {
 		try {
 			ServerSocket serverSocket = new ServerSocket(21);
@@ -18,9 +21,10 @@ public class Server {
 			serverUI.getTextArea().append("Waiting for connection...\n");
 			while(true) {
 				Socket socket = serverSocket.accept();
+				System.out.println("Connected to client port: "+ socket.getPort());
 				serverUI.getTextArea().append("Established connection to client "+socket.getRemoteSocketAddress() +"\n");
 				
-				ClientThread thread = new ClientThread(socket, db, listUsername,serverUI);
+				ClientThread thread = new ClientThread(socket, db, listUsername,serverUI,this);
 				thread.start();
 				
 			}

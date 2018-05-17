@@ -21,6 +21,8 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
+import javax.swing.JOptionPane;
+
 public class ClientThread extends Thread {
 	public static final int LOGIN = 1, GET_FILE = 2, GET_LIST_FILES = 3, UPLOAD = 4, CANCEL_UPLOAD = 5,
 			CONTINUE_UPLOAD = 6, CLOSE = 7, REGISTER = 8, CHECK_DIRECTORY = 9, DOWNLOAD = 10, CANCEL_DOWNLOAD = 11,
@@ -39,19 +41,27 @@ public class ClientThread extends Thread {
 	public ObjectInputStream ois;
 
 	public DBConnect db;
-	public List<String> listUsername;
+	public List<String> listUsername; // danh sách các user đang đăng nhập
 	public ServerUI serverUI;
 
+	// các biến nén nén, giải nén folder
 	public String srcZip;
 	public String nameFileZip;
 	String des = "";
 	public List<String> fileList = new ArrayList<>();
 
-	public ClientThread(Socket socket, DBConnect db, List<String> listUsername, ServerUI serverUI) {
+	public int request; // yêu cầu từ client
+	public String filePath;
+	public int curNumber; // mảnh hiện tại
+
+	
+	public Server server;
+	public ClientThread(Socket socket, DBConnect db, List<String> listUsername, ServerUI serverUI,Server server) {
 		this.socket = socket;
 		this.db = db;
 		this.listUsername = listUsername;
 		this.serverUI = serverUI;
+		this.server = server;
 
 		try {
 			in = new DataInputStream(this.socket.getInputStream());
@@ -69,30 +79,40 @@ public class ClientThread extends Thread {
 		boolean openThread = true;
 		while (openThread) {
 			try {
-				int request = in.readInt();
+				request = in.readInt();
 
 				if (request == LOGIN) {
 					String username = in.readUTF();
 					String password = in.readUTF();
-					if (listUsername.contains(username)) {
-						out.writeUTF("online");
-					} else {
-						if (db.login(username, password)) {
-							this.username = username;
-							// Lưu đường dẫn đến thư mục trên server ứng với tài khoản đăng nhập
-							this.homeDir += this.username;
+					if (server.curNumThreads == server.MAX_THREADS) {
+						out.writeUTF("full");
 
-							// Lưu tài khoản vào danh sách đang online
-							this.listUsername.add(username);
-							this.serverUI.getTextArea().append(getDateNow() + " : Logged in successfully\n");
-							out.writeUTF("correct");
-						} else
-							out.writeUTF("incorrect");
+					} else {
+						if (listUsername.contains(username)) {
+							out.writeUTF("online");
+						} else {
+							if (db.login(username, password)) {
+								server.curNumThreads++;
+								this.username = username;
+								// Lưu đường dẫn đến thư mục trên server ứng với tài khoản đăng nhập
+								this.homeDir += this.username;
+
+								// Lưu tài khoản vào danh sách đang online
+								this.listUsername.add(username);
+								this.serverUI.getTextArea().append(getDateNow() + " : Logged in successfully\n");
+								out.writeUTF("correct");
+							} else
+								out.writeUTF("incorrect");
+						}
+
 					}
 					out.flush();
 				} else if (request == REGISTER) {
+			
 					String username = in.readUTF();
 					String password = in.readUTF();
+					server.curNumThreads++;
+					
 					this.serverUI.getTextArea().append(getDateNow() + " : Registered \n");
 					if (db.register(username, password)) {
 						String path = this.homeDir + username;
@@ -201,11 +221,14 @@ public class ClientThread extends Thread {
 
 					String remotePath = in.readUTF();
 					remotePath = this.homeDir.replace('\\', '/') + remotePath;
+					filePath = remotePath;
+
 					this.serverUI.getTextArea()
 							.append(getDateNow() + " : Recieving file " + remotePath.replace('/', '\\') + "\n");
 					int numberFile = in.readInt();
 					int resume = CONTINUE_UPLOAD;
-					int curNumber = 0; // lưu file thứ i đang được upload
+
+					curNumber = 0; // lưu file thứ i đang được upload
 					for (int i = 1; i <= numberFile; i++) {
 
 						System.out.println("recieving part " + i);
@@ -239,16 +262,18 @@ public class ClientThread extends Thread {
 					}
 					if (resume == CONTINUE_UPLOAD) {
 						joinFile(remotePath, numberFile);
+						out.writeUTF("complete");
+						out.flush();
 						this.serverUI.getTextArea().append(getDateNow() + " : Recieved file successfully\n");
 					} else if (resume == CANCEL_UPLOAD) {
 						for (int t = 1; t <= curNumber; t++) {
 							File file = new File(remotePath + "-part" + t);
 							file.delete();
 						}
+						out.writeUTF("cancel");
+						out.flush();
 					}
 
-					out.writeUTF("complete");
-					out.flush();
 				} else if (request == UPLOAD_FOLDER) {
 					System.out.println("-------UPLOADING---------");
 
@@ -497,61 +522,56 @@ public class ClientThread extends Thread {
 						out.writeUTF("success");
 						out.flush();
 					}
-				}
-				else if(request == DELETE) {
+				} else if (request == DELETE) {
 					String path = in.readUTF();
 					path = this.homeDir + path;
 					path = path.replace('/', '\\');
 					System.out.println(path);
 
 					File file = new File(path);
-					
-					if(file.isFile())
+
+					if (file.isFile())
 						file.delete();
-					if(file.isDirectory())
+					if (file.isDirectory())
 						deleteFolder(file);
-					
+
 					out.writeUTF("success");
 					out.flush();
-				}
-				else if(request == RENAME) {
+				} else if (request == RENAME) {
 					String path = in.readUTF();
 					String newname = in.readUTF();
-					
+
 					File file = new File(path);
-					if(file.isDirectory()) {
+					if (file.isDirectory()) {
 						String oldname = file.getName();
-						if(oldname.equals(newname))
-						{
+						if (oldname.equals(newname)) {
 							out.writeUTF("nochange");
 							out.flush();
-						}
-						else {
-							File newFile= new File(file.getParent()+"\\"+newname);
+						} else {
+							File newFile = new File(file.getParent() + "\\" + newname);
 							file.renameTo(newFile);
 							out.writeUTF("change");
 							out.flush();
 						}
 					}
-					
-					if(file.isFile()) {
+
+					if (file.isFile()) {
 						String oldname = file.getName();
 						String extend = oldname.substring(oldname.lastIndexOf('.'));
 						oldname = oldname.substring(0, oldname.lastIndexOf('.'));
-						
-						if(oldname.equals(newname)) {
+
+						if (oldname.equals(newname)) {
 							out.writeUTF("nochange");
 							out.flush();
-						}
-						else {
-							File newFile= new File(file.getParent()+"\\"+newname+extend);
+						} else {
+							File newFile = new File(file.getParent() + "\\" + newname + extend);
 							file.renameTo(newFile);
 							out.writeUTF("change");
 							out.flush();
 						}
 					}
-				}
-				else if (request == CLOSE) {
+				} else if (request == CLOSE) {
+					server.curNumThreads--;
 					System.out.println("Recieve close request from client");
 					System.out.println("Closing this thread......");
 					this.listUsername.remove(this.username);
@@ -564,6 +584,16 @@ public class ClientThread extends Thread {
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
+				JOptionPane.showMessageDialog(null, "Error to connect");
+				if (request == UPLOAD) {
+					for (int i = 1; i <= curNumber; i++) {
+						System.out.println(filePath + "-part" + i);
+						File file = new File(filePath + "-part" + i);
+						System.out.println(file.delete());
+					}
+
+				}
+				System.exit(0);
 			}
 
 		}
@@ -587,7 +617,7 @@ public class ClientThread extends Thread {
 				file.delete();
 			}
 			outputStream.close();
-			System.out.println("Merged Files");
+			System.out.println("Joined Files");
 
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
@@ -678,7 +708,7 @@ public class ClientThread extends Thread {
 
 		return folder.delete();
 	}
-	
+
 	public void zip() {
 		byte[] bytes = new byte[1024];
 		try {

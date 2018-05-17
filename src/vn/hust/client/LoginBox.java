@@ -58,11 +58,11 @@ public class LoginBox extends JFrame {
 						|| tfUsername.getText().equals(null) || tfUsername.getText().equals("")) {
 					JOptionPane.showMessageDialog(null, "Please fill out hostname and username!");
 				} else {
-					String success;
+					String response;
 					try {
 
-						success = client.login(username, password);
-						if (success.equals("correct")) {
+						response = client.login(username, password);
+						if (response.equals("correct")) {
 
 							System.out.println("Connected and Logged in to server !");
 							JOptionPane.showMessageDialog(null, "Logged in successfully");
@@ -77,14 +77,18 @@ public class LoginBox extends JFrame {
 								}
 							});
 
-						} else if (success.equals("online")) {
+						} else if (response.equals("online")) {
 							JOptionPane.showMessageDialog(null,
 									"This account is being used on other device! Please try again later!");
+						} else if (response.equals("full")) {
+							JOptionPane.showMessageDialog(null, "Server is full now. Please log in later!");
 						} else {
 							JOptionPane.showMessageDialog(null, "Username or password is incorrect. Please try again!");
 						}
+					
+					}
 
-					} catch (NumberFormatException e) {
+					catch (NumberFormatException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
@@ -127,6 +131,7 @@ public class LoginBox extends JFrame {
 					}
 				}
 			}
+
 		});
 	}
 
