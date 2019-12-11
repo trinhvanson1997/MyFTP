@@ -6,7 +6,7 @@
 - Chỉnh các thông số trên máy cá nhân:
 	+ mở project , vào file DBConnect.java thay đổi username và pass theo cấu hình Mysql trên máy
 	+ Tạo 1 thư mục ngoài desktop với tên FTP và
-	vào file ClientThread.java s
+	vào file ClientThread.java sửa đường dẫn theo máy cá nhân tại dòng
   <pre>
   public String homeDir = "C:\\Users\\sontrinh\\Desktop\\FTP\\";
   </pre> 
